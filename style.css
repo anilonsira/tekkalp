@@ -1,17 +1,22 @@
+/* Yazı tipleri sitenin kendisinden yüklenir (Baloo 2 ve Nunito, Türkçe harflerin tamamı dahil) */
+@font-face{font-family:'Baloo 2';src:url(baloo2-latin-ext.woff2) format('woff2');font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Baloo 2';src:url(baloo2-latin.woff2) format('woff2');font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Nunito';src:url(nunito-latin-ext.woff2) format('woff2');font-weight:200 1000;font-style:normal;font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Nunito';src:url(nunito-latin.woff2) format('woff2');font-weight:200 1000;font-style:normal;font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 /* Tek Kalbim — stil dosyası
    VOICE: sıcak, güven veren, sade; kurallar net ama dostça
    IDEA: maskeli balo davetiyesi — herkes bir hayvan maskesiyle girer
    PICTURE: rumuz kartı ve hayvan maskesi avatarları, akışın kendisi
-   COLOUR and TYPE: derin petrol mavisi, kum zemin, mercan vurgu; Fredoka başlık, Nunito metin
+   COLOUR and TYPE: derin petrol mavisi, kum zemin, mercan vurgu; Baloo 2 başlık, Nunito metin
    LAYOUT: ortada telefon genişliğinde tek sütun uygulama, ekranlar arası geçiş */
 :root{color-scheme:light dark;--bg:light-dark(#efeae0,#08202a);--panel:light-dark(#fffdf9,#0f2f3a);--ink:light-dark(#0d3b47,#e8f1ef);--muted:light-dark(#5d7479,#9db4b6);--line:light-dark(#dcd4c6,#1f4652);--accent:#ff6b5a;--accent-ink:#fff;--teal:light-dark(#1f7f78,#5cc3b6);--soft:light-dark(#e3efec,#143c47);--danger:light-dark(#c2412f,#ff8a7a)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Nunito,system-ui,sans-serif;overflow-x:clip}
-h1,h2,h3{font-family:Fredoka,Nunito,sans-serif;font-weight:600;line-height:1.1;text-wrap:balance;margin:0}
+h1,h2,h3{font-family:'Baloo 2',Nunito,sans-serif;font-weight:600;line-height:1.1;text-wrap:balance;margin:0}
 h1{font-size:clamp(28px,7vw,36px)}h2{font-size:24px}h3{font-size:18px}
 .top{display:flex;align-items:center;justify-content:space-between;max-width:480px;margin:0 auto;padding:16px}
-.brand{font:600 22px Fredoka,sans-serif;display:flex;gap:8px;align-items:center}
+.brand{font:600 22px 'Baloo 2',sans-serif;display:flex;gap:8px;align-items:center}
 .pill{font-size:13px;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--muted)}
 .app{max-width:480px;margin:0 auto;padding:0 16px 40px}
 .screen{display:none;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 12px 32px -18px rgb(0 0 0/.35)}
@@ -36,7 +41,7 @@ button{font:inherit;cursor:pointer;min-height:44px;border-radius:14px}
 .seg button[aria-pressed=true],.chip[aria-pressed=true]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .nick{display:flex;gap:16px;align-items:center;padding:16px;border-radius:20px;background:var(--soft)}
-.nick b{font:600 24px Fredoka,sans-serif;display:block}
+.nick b{font:600 24px 'Baloo 2',sans-serif;display:block}
 .av{flex:none;width:64px;height:64px}
 .masks{display:flex;justify-content:center;gap:10px;margin:4px 0 18px}
 .masks svg{width:72px;height:72px}
@@ -76,7 +81,7 @@ button{font:inherit;cursor:pointer;min-height:44px;border-radius:14px}
 .row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
 .voice audio{height:36px;max-width:220px}
 .rec{display:grid;place-items:center;gap:12px;padding:12px 0}
-.rec b{font:600 40px Fredoka,sans-serif}
+.rec b{font:600 40px 'Baloo 2',sans-serif}
 .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.2}}
 .banner{margin:10px 0;padding:12px;border-radius:14px;background:var(--soft);display:grid;gap:8px}
