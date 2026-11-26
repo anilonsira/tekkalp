@@ -187,7 +187,7 @@ function renderSearch() {
   $('searchGo').disabled = !want.r.size;
   $('daily').textContent = `Bugün kalan eşleşme hakkın: ${p.matches_left} / ${DAILY}`;
   $('myTags').textContent = tagLine(p.interests) || 'Henüz seçmedin. Ortak ilgi alanı olanlarla öncelikli eşleşirsin.';
-  renderPushBox();
+  renderPushBox(); renderInstallBox();
   renderFriend();
 }
 $('editTags').onclick = () => {
@@ -559,7 +559,7 @@ async function renderPushBox() {
   const box = $('pushBox'); if (!box) return;
   if (!pushSupported) {
     box.hidden = !isIOS;
-    box.innerHTML = isIOS ? '<b>Bildirim almak için</b><span class="small muted">iPhone\'da Safari\'nin alt kısmındaki Paylaş düğmesine dokun, "Ana Ekrana Ekle"yi seç. Sonra Tek Kalbim\'i ana ekrandaki simgesinden aç ve buradan bildirimleri aç.</span>' : '';
+    box.innerHTML = isIOS ? '<b>Bildirim almak için</b><span class="small muted">iPhone\'da bildirimler, Tek Kalbim ana ekrana yüklenince çalışır. Yukarıdaki "Uygulamayı yükle" adımlarını izle, sonra uygulamayı ana ekrandan açıp buradan bildirimleri aç.</span>' : '';
     return;
   }
   box.hidden = false;
@@ -585,6 +585,27 @@ async function enablePush() {
     info('Bildirimler açıldı', 'Site kapalıyken yeni mesajlardan haberin olacak.');
   } catch (e) { info('Bildirimler açılamadı', 'Bir sorun oluştu, biraz sonra tekrar dene.'); }
   renderPushBox();
+}
+
+// ---------- Uygulamayı yükle (ana ekrana ekle) ----------
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderInstallBox(); });
+window.addEventListener('appinstalled', () => { installEvt = null; renderInstallBox(); info('Uygulama yüklendi', 'Tek Kalbim artık ana ekranında. Oradan açınca tam ekran çalışır.'); });
+const SHARE_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+function renderInstallBox() {
+  const box = $('installBox'); if (!box) return;
+  if (isStandalone || (!installEvt && !isIOS)) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<b>Tek Kalbim\'i telefonuna yükle</b><span class="small muted">Ana ekranından tek dokunuşla aç, tam ekran kullan' + (isIOS ? ' ve bildirim al.' : '.') + '</span><button class="btn" id="installBtn" type="button">Uygulamayı yükle</button>';
+  $('installBtn').onclick = async () => {
+    if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch {} installEvt = null; renderInstallBox(); return; }
+    sheet(`<h3>iPhone'a yükleme</h3><ol class="steps">
+      <li><b>Safari</b> ile bu sayfadayken alttaki <b>Paylaş</b> düğmesine dokun ${SHARE_ICON}. Chrome kullanıyorsan Paylaş düğmesi adres çubuğunun sağındadır.</li>
+      <li>Açılan listeyi biraz aşağı kaydır ve <b>Ana Ekrana Ekle</b>'yi seç.</li>
+      <li>Sağ üstteki <b>Ekle</b>'ye dokun.</li>
+      <li>Ana ekranındaki kırmızı kalp simgesinden <b>Tek Kalbim</b>'i aç. Artık tam ekran çalışır ve bildirimleri açabilirsin.</li></ol>`,
+      [['Anladım', closeSheet, 'btn']]);
+  };
 }
 
 // ---------- Başlat ----------
