@@ -81,10 +81,13 @@
 <section class="screen" id="s-qs">
   <div class="nick"><span id="pAv"></span><div><span class="small muted">Eşleştin</span><b id="pNick"></b><span class="small muted" id="pMeta"></span><span class="small tagline" id="pTags"></span></div></div>
   <h3 style="margin-top:18px">Sohbeti açmak için 1–3 soru seç</h3>
-  <p class="muted small" id="qCount">0 / 3 seçildi</p>
+  <div class="qtabs" id="qTabs" role="tablist"></div>
   <div class="qlist" id="qlist"></div>
-  <button class="btn" id="qGo" disabled style="margin-top:16px">Soruları gönder</button>
-  <button class="ghost" id="qEnd" style="margin-top:8px;width:100%">Sohbeti bitir</button>
+  <div class="qfoot">
+    <div class="qfoot-row"><span class="muted small" id="qCount">0 / 3 seçildi</span><button class="link" id="qRandom" type="button">Benim için seç</button></div>
+    <button class="btn" id="qGo" disabled>Soruları gönder</button>
+    <button class="link" id="qEnd" type="button" style="display:block;margin:10px auto 0">Sohbeti bitir</button>
+  </div>
 </section>
 
 <section class="screen" id="s-chat">
