@@ -86,5 +86,15 @@ input[type=date]{font:inherit;font-size:16px;padding:12px 14px;border-radius:14p
 .answering{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .answering button{min-height:32px}
 [hidden]{display:none!important}
-.send input{flex:1;width:auto}.send button{flex:none}
+.send input{flex:1;width:auto;height:50px;border-radius:25px;padding:0 18px;font-size:16px}.send button{flex:none}
+.send{align-items:center;padding-top:10px}
+.ico{width:50px;height:50px;min-height:50px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.ico svg{width:46px;height:46px;display:block}
+.ico .trk{fill:none;stroke:var(--line);stroke-width:3}
+.ico .prg{fill:none;stroke:var(--teal);stroke-width:3;stroke-linecap:round;transition:stroke-dasharray .4s}
+.ico.locked .mic{opacity:.45}
+.ico.on{background:var(--accent);border-color:var(--accent);color:#fff}.ico.on .trk,.ico.on .prg{display:none}
+#sendBtn.ico{background:var(--accent);border:0;color:#fff}#sendBtn.ico:disabled{opacity:.4}
+.brand svg{flex:none;border-radius:8px}
+@media(max-width:600px){.top{padding:12px}.app{padding:0 8px 16px}.screen{padding:16px;border-radius:20px}.tools{gap:6px;margin:10px 0}.tools button{min-height:40px;padding:8px 10px;font-size:13px;flex:1 1 auto}.msgs{height:calc(100dvh - 360px);min-height:260px}.foot{padding:0 12px 24px}}
 .msgs{margin-top:6px}
