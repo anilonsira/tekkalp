@@ -58,7 +58,8 @@ const info = (title, text) => sheet(`<h3>${esc(title)}</h3>${text ? `<p>${esc(te
 $('veil').addEventListener('click', e => { if (e.target === $('veil')) closeSheet(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
-$('brand').innerHTML = av('Tek Kalp', 32) + 'Tek Kalp';
+const LOGO = '<svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#0d3b47"/><path d="M32 54C32 54 8 39.5 8 23.5 8 15.5 14 10 21 10c4.8 0 8.8 2.8 11 6.6C34.2 12.8 38.2 10 43 10c7 0 13 5.5 13 13.5C56 39.5 32 54 32 54Z" fill="#ff6b5a"/><circle cx="32" cy="27" r="5" fill="#0d3b47"/><path d="M29.4 30h5.2l1.6 11h-8.4z" fill="#0d3b47"/></svg>';
+$('brand').innerHTML = LOGO + 'Tek Kalp';
 $('masks').innerHTML = ['Neşeli Tilki', 'Uykulu Penguen', 'Meraklı Baykuş'].map(n => `<span class="bob">${av(n)}</span>`).join('');
 
 // ---------- Bağlantı ----------
@@ -223,8 +224,11 @@ function renderChat() {
     $('fAcc').onclick = () => act('respond_friend', { p_chat: CH.id, p_accept: true });
     $('fDec').onclick = () => act('respond_friend', { p_chat: CH.id, p_accept: false });
   }
-  const vb = $('voiceBtn');
-  vb.textContent = c.voice_me && c.voice_them && c.voice_unlocked ? 'Ses' : c.voice_unlocked ? 'Ses (izin)' : `Ses ${Math.min(c.msg_count, VOICE_MSGS)}/${VOICE_MSGS}`;
+  const vb = $('voiceBtn'), active = c.voice_me && c.voice_them && c.voice_unlocked, n = Math.min(c.msg_count, VOICE_MSGS);
+  $('voiceRing').setAttribute('stroke-dasharray', `${c.voice_unlocked ? 100 : n / VOICE_MSGS * 100} 100`);
+  vb.classList.toggle('on', active); vb.classList.toggle('locked', !c.voice_unlocked);
+  vb.title = active ? 'Sesli mesaj gönder' : c.voice_unlocked ? 'Sesli mesaj: izin gerekli' : `Sesli mesaj kilidi: ${n} / ${VOICE_MSGS} mesaj`;
+  vb.setAttribute('aria-label', vb.title);
   if (!$('s-chat').classList.contains('on')) show('s-chat');
 }
 async function act(fn, args) { try { await rpc(fn, args); await refresh(); if (ST.chat) renderChat(); } catch (e) { info('Olmadı', errMsg(e)); } }
@@ -337,8 +341,8 @@ async function toggleRec() {
   if (rec) { stopRec(false); return; }
   const mime = pickMime();
   if (!mime) return info('Desteklenmiyor', 'Bu tarayıcı ses kaydını desteklemiyor.');
-  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { return info('Mikrofon izni gerekli', 'Tarayıcı ayarlarından bu siteye mikrofon izni ver.'); }
-  const chunks = [], mr = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32000 });
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } }); } catch { return info('Mikrofon izni gerekli', 'Tarayıcı ayarlarından bu siteye mikrofon izni ver.'); }
+  const chunks = [], mr = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 96000 });
   rec = { mr, stream, start: Date.now(), cancel: false };
   mr.ondataavailable = e => e.data.size && chunks.push(e.data);
   mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); const r = rec; rec = null; clearInterval(r.timer); if (!r.cancel) uploadVoice(new Blob(chunks, { type: mime.split(';')[0] }), Math.max(1, Math.round((Date.now() - r.start) / 1000))); };
