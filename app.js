@@ -310,6 +310,7 @@ function renderChat() {
   $('cAv').innerHTML = av(p.nick); $('cNick').textContent = p.nick;
   $('cMeta').textContent = (c.is_friend_chat ? 'Arkadaşın' : `${gName(p.gender)} · ${p.age_range}`) + ' · ' + seenText(p.last_seen, CH && CH.online);
   $('cMeta').classList.toggle('online', !!(CH && CH.online) || isRecent(p.last_seen));
+  { const m = $('cMeta'); delete m.dataset.typing; m.classList.remove('typing-now'); if (CH && CH.typingUntil > Date.now()) setTypingMeta(true); }
   $('cTags').textContent = c.common && c.common.length ? 'Ortak ilgi: ' + tagLine(c.common) : (p.interests && p.interests.length ? 'İlgi alanları: ' + tagLine(p.interests) : '');
   if (CH) { CH.theirRead = Math.max(CH.theirRead || 0, c.their_read || 0); updTicks(); }
   const open = c.is_friend_chat || c.their_submitted;
@@ -365,14 +366,22 @@ function addMsg(m) {
   } else d.textContent = m.body;
   const tm = document.createElement('span'); tm.className = 't'; tm.textContent = hhmm(m.created_at); d.append(tm);
   if (mine) { d.dataset.id = m.id; const tk = document.createElement('span'); tk.className = 'tick'; tm.append(' ', tk); }
-  if (!mine) { CH.lastPartnerId = Math.max(CH.lastPartnerId || 0, m.id); $('typing').hidden = true; if (CH.loaded) { ding('msg'); bumpUnread(); markRead(); } }
+  if (!mine) { CH.lastPartnerId = Math.max(CH.lastPartnerId || 0, m.id); $('typing').hidden = true; CH.typingUntil = 0; setTypingMeta(false); if (CH.loaded) { ding('msg'); bumpUnread(); markRead(); } }
   $('msgs').append(d); $('msgs').scrollTop = 1e9;
   if (mine) updTicks();
 }
 let typingTimer = null, lastTypingSent = 0;
 function showTyping() {
-  const el = $('typing'); el.textContent = `${ST?.chat?.partner?.nick || 'Karşı taraf'} yazıyor…`; el.hidden = false;
-  clearTimeout(typingTimer); typingTimer = setTimeout(() => { el.hidden = true; }, 3500);
+  const el = $('typing'); el.hidden = false; $('msgs').scrollTop = 1e9;
+  if (CH) CH.typingUntil = Date.now() + 3500;
+  setTypingMeta(true);
+  clearTimeout(typingTimer); typingTimer = setTimeout(() => { el.hidden = true; setTypingMeta(false); }, 3500);
+}
+// Sohbetin üstündeki durum yazısı karşı taraf yazarken "yazıyor…" olur
+function setTypingMeta(on) {
+  const m = $('cMeta'); if (!m) return;
+  if (on) { if (!m.dataset.typing) m.dataset.base = m.textContent; m.dataset.typing = '1'; m.textContent = 'yazıyor…'; m.classList.add('typing-now'); }
+  else if (m.dataset.typing) { delete m.dataset.typing; m.textContent = m.dataset.base || ''; m.classList.remove('typing-now'); }
 }
 $('msgIn').addEventListener('input', () => {
   if (!CH || !CH.channel || Date.now() - lastTypingSent < 2000) return;
@@ -607,6 +616,25 @@ function renderInstallBox() {
       [['Anladım', closeSheet, 'btn']]);
   };
 }
+
+// ---------- Gece / gündüz teması ----------
+const THEMES = [['auto', 'Otomatik', 'Telefonunun ayarına göre değişir'], ['light', 'Gündüz', 'Hep açık renk'], ['dark', 'Gece', 'Hep koyu renk']];
+const T_ICON = { auto: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor"/></svg>', light: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>', dark: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>' };
+function applyTheme(t) {
+  if (!T_ICON[t]) t = 'auto';
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  store.set('tk_theme', t);
+  $('themeBtn').innerHTML = T_ICON[t]; $('themeBtn').title = 'Görünüm: ' + THEMES.find(x => x[0] === t)[1];
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  metas.forEach(m => { if (!m.dataset.orig) m.dataset.orig = m.content; m.content = t === 'auto' ? m.dataset.orig : (t === 'dark' ? '#0f2f3a' : '#fffdf9'); });
+}
+applyTheme(store.get('tk_theme') || 'auto');
+$('themeBtn').onclick = () => {
+  const cur = store.get('tk_theme') || 'auto';
+  sheet(`<h3>Görünüm</h3><div class="qlist">${THEMES.map(x => `<button class="q themeopt" aria-pressed="${x[0] === cur}" data-t="${x[0]}">${T_ICON[x[0]]}<span><b>${x[1]}</b><br><span class="small muted">${x[2]}</span></span></button>`).join('')}</div>`,
+    [['Kapat', closeSheet]],
+    () => { $('sheet').querySelectorAll('.themeopt').forEach(b => b.onclick = () => { applyTheme(b.dataset.t); closeSheet(); }); });
+};
 
 // ---------- Başlat ----------
 if (!configured) show('s-setup'); else route().catch(e => info('Bağlantı sorunu', errMsg(e)));
