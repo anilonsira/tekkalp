@@ -98,3 +98,6 @@ input[type=date]{font:inherit;font-size:16px;padding:12px 14px;border-radius:14p
 .brand svg{flex:none;border-radius:8px}
 @media(max-width:600px){.top{padding:12px}.app{padding:0 8px 16px}.screen{padding:16px;border-radius:20px}.tools{gap:6px;margin:10px 0}.tools button{min-height:40px;padding:8px 10px;font-size:13px;flex:1 1 auto}.msgs{height:calc(100dvh - 360px);min-height:260px}.foot{padding:0 12px 24px}}
 .msgs{margin-top:6px}
+.brand{cursor:pointer;border-radius:10px}.brand:focus-visible{outline:3px solid var(--teal);outline-offset:4px}
+.m .t{display:block;font-size:11px;opacity:.6;text-align:end;margin-top:2px;font-weight:400}
+.typing{font-size:13px;color:var(--muted);padding:2px 6px;font-style:italic}
