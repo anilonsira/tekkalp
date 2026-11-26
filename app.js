@@ -60,6 +60,33 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet()
 
 const LOGO = '<svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true"><defs><linearGradient id="tkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2a3a"/><stop offset="1" stop-color="#b8001c"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0d3b47"/><path d="M32 56C32 56 6 41 6 22.5 6 13.5 12.8 7 21 7c5 0 9 2.6 11 6.8C34 9.6 38 7 43 7c8.2 0 15 6.5 15 15.5C58 41 32 56 32 56Z" fill="url(#tkg)"/><path d="M13.5 18.5c1.6-4.2 5-6.3 9-6.3" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="26" r="5.2" fill="#0d3b47"/><path d="M29.3 29.5h5.4l1.7 11.5h-8.8z" fill="#0d3b47"/></svg>';
 $('brand').innerHTML = LOGO + 'Tek Kalbim';
+$('brand').onclick = goHome;
+$('brand').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } };
+function goHome() {
+  const on = id => $(id).classList.contains('on');
+  if (on('s-chat') || on('s-qs')) return sheet('<h3>Sohbetin devam ediyor</h3><p>Ana sayfaya dönmek için önce bu sohbeti bitirmen gerekiyor.</p>', [['Sohbete dön', closeSheet, 'btn'], ['Sohbeti bitir', () => { closeSheet(); askEnd(); }]]);
+  if (on('s-wait')) return sheet('<h3>Arama durdurulsun mu?</h3>', [['Aramaya devam et', closeSheet, 'btn'], ['Aramayı durdur', () => { closeSheet(); $('cancelWait').click(); }]]);
+  closeSheet();
+  if (ST && ST.profile && ST.profile.gender && !ST.profile.banned_until && on('s-search') === false && !on('s-profile')) { renderSearch(); show('s-search'); return; }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- Bildirim sesi, titreşim, sekme başlığı ----------
+let actx = null, unread = 0;
+document.addEventListener('pointerdown', () => { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } }, { once: true });
+function ding(kind) {
+  try {
+    if (!actx) return; const t = actx.currentTime;
+    (kind === 'match' ? [660, 880] : [740]).forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.14); g.gain.exponentialRampToValueAtTime(0.18, t + i * 0.14 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.14 + 0.25);
+      o.connect(g).connect(actx.destination); o.start(t + i * 0.14); o.stop(t + i * 0.14 + 0.3);
+    });
+  } catch {}
+  try { navigator.vibrate && navigator.vibrate(kind === 'match' ? [120, 80, 120] : 80); } catch {}
+}
+function bumpUnread() { if (!document.hidden) return; unread++; document.title = `(${unread}) Tek Kalbim`; }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { unread = 0; document.title = 'Tek Kalbim'; } });
 $('masks').innerHTML = ['Neşeli Tilki', 'Uykulu Penguen', 'Meraklı Baykuş'].map(n => `<span class="bob">${av(n)}</span>`).join('');
 
 // ---------- Bağlantı ----------
@@ -160,10 +187,19 @@ function startWaiting() {
   $('waitAv').innerHTML = av(ST.profile.nick);
   $('waitTxt').textContent = `${want.g === '*' ? 'Kadın veya erkek' : gName(want.g)}, ${[...want.r].join(', ')} yaş`;
   show('s-wait');
+  const started = Date.now();
+  clearInterval(window.__waitClock);
+  window.__waitClock = setInterval(() => {
+    if (!$('s-wait').classList.contains('on')) return clearInterval(window.__waitClock);
+    const s = Math.floor((Date.now() - started) / 1000);
+    $('waitClock').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    $('waitHint').hidden = s < 45;
+  }, 1000);
+  $('waitClock').textContent = '0:00'; $('waitHint').hidden = true;
   const tick = async () => {
     try {
       const id = await rpc('find_match', { p_want_gender: want.g, p_want_ranges: [...want.r] });
-      if (id) { waitTimer = null; return enterChat(id); }
+      if (id) { waitTimer = null; clearInterval(window.__waitClock); ding('match'); bumpUnread(); return enterChat(id); }
     } catch (e) { waitTimer = null; await refresh().catch(() => {}); renderSearch(); show('s-search'); return info('Arama durdu', errMsg(e)); }
     if (waitTimer !== null) waitTimer = setTimeout(tick, 3000);
   };
@@ -181,12 +217,14 @@ async function enterChat(id) {
     $('msgs').innerHTML = '';
     CH.channel = sb.channel('chat-' + id)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, p => addMsg(p.new))
+      .on('broadcast', { event: 'typing' }, p => { if (p.payload && p.payload.u !== ME) showTyping(); })
       .subscribe();
     CH.poll = setInterval(pollChat, 4000);
   }
   await refresh();
   if (!ST.chat || ST.chat.id !== id) return chatEnded();
   await fetchMsgs();
+  CH.loaded = true;
   renderChat();
 }
 function leaveChatLocal() { if (!CH) return; clearInterval(CH.poll); sb.removeChannel(CH.channel); CH = null; answeringQ = null; }
@@ -264,8 +302,21 @@ function addMsg(m) {
       d.append(a, document.createTextNode(` 0:${String(m.voice_sec).padStart(2, '0')}`));
     });
   } else d.textContent = m.body;
+  const tm = document.createElement('span'); tm.className = 't'; tm.textContent = hhmm(m.created_at); d.append(tm);
+  if (!mine) { $('typing').hidden = true; if (CH.loaded) { ding('msg'); bumpUnread(); } }
   $('msgs').append(d); $('msgs').scrollTop = 1e9;
 }
+let typingTimer = null, lastTypingSent = 0;
+function showTyping() {
+  const el = $('typing'); el.textContent = `${ST?.chat?.partner?.nick || 'Karşı taraf'} yazıyor…`; el.hidden = false;
+  clearTimeout(typingTimer); typingTimer = setTimeout(() => { el.hidden = true; }, 3500);
+}
+$('msgIn').addEventListener('input', () => {
+  if (!CH || !CH.channel || Date.now() - lastTypingSent < 2000) return;
+  lastTypingSent = Date.now();
+  try { CH.channel.send({ type: 'broadcast', event: 'typing', payload: { u: ME } }); } catch {}
+});
+const hhmm = iso => { const d = iso ? new Date(iso) : new Date(); return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); };
 const sys = t => { const d = document.createElement('div'); d.className = 'm sys'; d.textContent = t; $('msgs').append(d); $('msgs').scrollTop = 1e9; };
 
 function startAnswer(q) {
