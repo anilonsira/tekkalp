@@ -116,3 +116,22 @@ input[type=date]{font:inherit;font-size:16px;padding:12px 14px;border-radius:14p
 .pushbox .btn{margin-top:4px}.pushbox .link{justify-self:start}
 .kbrow{display:flex;justify-content:flex-end}
 .kbdown{display:inline-grid;place-items:center;width:44px;height:36px;min-height:36px;padding:0;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.top{padding-top:max(16px,env(safe-area-inset-top))}
+/* Telefonda tam ekran: çerçeve ve kenar boşlukları yok, sohbet ekranı tüm yüksekliği kullanır */
+@media(max-width:600px){
+  body{background:var(--panel)}
+  .top{max-width:none;padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  .app{padding:0}
+  .screen{border:0;border-radius:0;box-shadow:none;padding:16px max(14px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+  .foot{padding:4px 14px calc(20px + env(safe-area-inset-bottom))}
+  body.in-chat{overflow:hidden;overscroll-behavior:none}
+  body.in-chat .foot{display:none}
+  body.in-chat .top{position:static}
+  body.in-chat .app{height:calc(var(--vvh,100dvh) - var(--top-h,57px));overflow:hidden}
+  body.in-chat #s-chat.on{display:flex;flex-direction:column;height:100%;padding-top:10px;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  body.in-chat .msgs{flex:1 1 auto;height:auto;min-height:0}
+  body.in-chat .chathead{padding-bottom:8px}
+  body.in-chat .rule{font-size:12px;padding:6px 10px}
+  /* Klavye açıkken mesajlara yer açılsın */
+  body.in-chat.typing-mode .tools, body.in-chat.typing-mode .rule, body.in-chat.typing-mode #cTags{display:none}
+}
