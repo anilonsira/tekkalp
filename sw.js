@@ -1,6 +1,10 @@
 // Tek Kalbim — bildirim çalışanı (service worker)
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+// Sayfa her açılışta sunucudan kontrol edilsin: telefon eski sürümü göstermesin
+self.addEventListener('fetch', e => {
+  if (e.request.mode === 'navigate') e.respondWith(fetch(e.request, { cache: 'no-cache' }).catch(() => fetch(e.request)));
+});
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data ? e.data.text() : '' }; }
