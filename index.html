@@ -13,11 +13,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tek Kalbim">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="nunito-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="baloo2-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="baloo2-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <script>try{var t=localStorage.getItem('tk_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
-<link rel="stylesheet" href="style.css?v=13">
-<script src="config.js?v=13"></script>
+<link rel="stylesheet" href="style.css?v=14">
+<script src="config.js?v=14"></script>
 </head>
 <body>
 <header class="top"><div class="brand" id="brand" role="link" tabindex="0" aria-label="Ana sayfa" title="Ana sayfa"></div><div class="topr"><button class="themebtn" id="themeBtn" type="button" aria-label="Gece ya da gündüz görünümü"></button><span class="pill" id="topPill">18+</span></div></header>
@@ -81,7 +83,7 @@
   <div class="radar"><span></span><span></span><span></span><span id="waitAv"></span></div>
   <h2 style="text-align:center">Sana uygun biri aranıyor…</h2>
   <p class="muted" style="text-align:center" id="waitTxt"></p>
-  <p style="text-align:center;font:600 22px Fredoka,sans-serif;margin:4px 0" id="waitClock">0:00</p>
+  <p style="text-align:center;font:600 22px 'Baloo 2',sans-serif;margin:4px 0" id="waitClock">0:00</p>
   <p class="small muted" style="text-align:center" id="waitHint" hidden>Biraz uzun sürdü. Yaş aralığını ya da cinsiyet filtresini genişletirsen daha hızlı eşleşebilirsin.</p>
   <button class="ghost" id="cancelWait" style="width:100%;margin-top:12px">Vazgeç</button>
 </section>
@@ -99,7 +101,7 @@
 </section>
 
 <section class="screen" id="s-chat">
-  <div class="chathead"><span id="cAv"></span><div><b id="cNick" style="font:600 18px Fredoka,sans-serif"></b><div class="small muted" id="cMeta"></div><div class="small tagline" id="cTags"></div></div></div>
+  <div class="chathead"><span id="cAv"></span><div><b id="cNick" style="font:600 18px 'Baloo 2',sans-serif"></b><div class="small muted" id="cMeta"></div><div class="small tagline" id="cTags"></div></div></div>
   <div class="tools">
     <button class="ghost" id="tFriend">Arkadaş ekle</button>
     <button class="ghost" id="tReport">Şikayet et</button>
@@ -135,6 +137,7 @@
 
 <div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" id="sheet"></div></div>
 
-<script type="module" src="app.js?v=13"></script>
+<script src="supabase.js?v=14"></script>
+<script type="module" src="app.js?v=14"></script>
 </body>
 </html>
