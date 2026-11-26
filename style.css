@@ -115,6 +115,7 @@ input[type=date]{font:inherit;font-size:16px;padding:12px 14px;border-radius:14p
 .pushbox{margin-top:12px;padding:14px;border-radius:16px;background:var(--soft);display:grid;gap:6px}
 .pushbox .btn{margin-top:4px}.pushbox .link{justify-self:start}
 .kbrow{display:flex;justify-content:flex-end}
+.steps{padding-inline-start:22px;margin:8px 0;display:grid;gap:10px}.steps li{line-height:1.5}
 .kbdown{display:inline-grid;place-items:center;width:44px;height:36px;min-height:36px;padding:0;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 .top{padding-top:max(16px,env(safe-area-inset-top))}
 /* Telefonda tam ekran: çerçeve ve kenar boşlukları yok, sohbet ekranı tüm yüksekliği kullanır */
