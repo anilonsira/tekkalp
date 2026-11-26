@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tek Kalp</title>
+<meta name="description" content="Anonim, yavaş tanışma. Önce sohbet, aynı anda tek kalp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<header class="top"><div class="brand" id="brand"></div><span class="pill" id="topPill">18+</span></header>
+<main class="app">
+
+<section class="screen on" id="s-loading"><p class="muted">Yükleniyor…</p></section>
+
+<section class="screen" id="s-setup">
+  <h2>Kurulum tamamlanmadı</h2>
+  <p>config.js dosyasına Supabase proje adresi ve anon anahtarı yazılmalı.</p>
+</section>
+
+<section class="screen" id="s-gate">
+  <div class="masks" id="masks"></div>
+  <h1>Anonim sohbete hoş geldin</h1>
+  <p class="muted">Burada adın yok, sadece sana verilen rumuz var. Başlamadan önce birkaç onay gerekiyor.</p>
+  <div class="stack">
+    <label class="f">Doğum tarihin
+      <input type="date" id="birth" min="1915-01-01">
+    </label>
+    <span class="small muted">Doğum tarihin saklanmaz; sadece 18 yaş kontrolü ve yaş aralığın için kullanılır.</span>
+    <label class="chk"><input type="checkbox" id="c18"><span>18 yaşından büyüğüm.</span></label>
+    <label class="chk"><input type="checkbox" id="cTerms"><span><button class="link" data-doc="terms">Kullanım Koşulları</button>'nı okudum ve kabul ediyorum.</span></label>
+    <label class="chk"><input type="checkbox" id="cKvkk"><span><button class="link" data-doc="kvkk">KVKK Aydınlatma Metni</button>'ni okudum.</span></label>
+    <label class="chk"><input type="checkbox" id="cCookie"><span>Hesapsız kullanım için cihazımda zorunlu bir oturum bilgisi tutulmasını kabul ediyorum. <button class="link" data-doc="cookie">Ayrıntılar</button></span></label>
+    <p class="err" id="gateErr" hidden></p>
+    <button class="btn" id="gateGo" disabled>Devam et</button>
+  </div>
+</section>
+
+<section class="screen" id="s-profile">
+  <h2>Seni biraz tanıyalım</h2>
+  <div class="stack">
+    <div><b>Cinsiyetin</b> <span class="small muted">(sonradan değiştirilemez)</span><div class="seg" id="myGender" style="margin-top:8px"><button aria-pressed="false" data-v="K">Kadın</button><button aria-pressed="false" data-v="E">Erkek</button></div></div>
+    <div><b>Yaş aralığın</b><p class="muted small" id="myRange"></p></div>
+    <div><b>Rumuzun</b>
+      <div class="nick" style="margin-top:8px"><span id="nickAv"></span><div><b id="nickTxt"></b><span class="small muted">Sohbet ettiğin kişi seni sadece bununla görür.</span></div></div>
+      <button class="ghost" id="reroll" style="margin-top:8px;width:100%"></button>
+    </div>
+    <button class="btn" id="profGo" disabled>Rumuzumla devam et</button>
+  </div>
+</section>
+
+<section class="screen" id="s-search">
+  <div class="nick"><span id="meAv"></span><div><span class="small muted">Rumuzun</span><b id="meNick"></b><span class="small muted" id="meMeta"></span></div></div>
+  <h2 style="margin-top:20px">Kiminle konuşmak istersin?</h2>
+  <div class="stack">
+    <div><b>Cinsiyet</b><div class="seg" id="wantGender" style="margin-top:8px"><button aria-pressed="false" data-v="K">Kadın</button><button aria-pressed="false" data-v="E">Erkek</button><button aria-pressed="true" data-v="*">Farketmez</button></div></div>
+    <div><b>Yaş aralığı</b> <span class="small muted">(birden fazla seçebilirsin)</span><div class="chips" id="wantRange" style="margin-top:8px"></div></div>
+    <p class="small muted" id="daily" style="margin:0"></p>
+    <button class="btn" id="searchGo">Eşleşme ara</button>
+  </div>
+  <div class="friend" id="friendBox"></div>
+</section>
+
+<section class="screen" id="s-wait">
+  <div class="radar"><span></span><span></span><span></span><span id="waitAv"></span></div>
+  <h2 style="text-align:center">Sana uygun biri aranıyor…</h2>
+  <p class="muted" style="text-align:center" id="waitTxt"></p>
+  <button class="ghost" id="cancelWait" style="width:100%;margin-top:12px">Vazgeç</button>
+</section>
+
+<section class="screen" id="s-qs">
+  <div class="nick"><span id="pAv"></span><div><span class="small muted">Eşleştin</span><b id="pNick"></b><span class="small muted" id="pMeta"></span></div></div>
+  <h3 style="margin-top:18px">Sohbeti açmak için 1–3 soru seç</h3>
+  <p class="muted small" id="qCount">0 / 3 seçildi</p>
+  <div class="qlist" id="qlist"></div>
+  <button class="btn" id="qGo" disabled style="margin-top:16px">Soruları gönder</button>
+  <button class="ghost" id="qEnd" style="margin-top:8px;width:100%">Sohbeti bitir</button>
+</section>
+
+<section class="screen" id="s-chat">
+  <div class="chathead"><span id="cAv"></span><div><b id="cNick" style="font:600 18px Fredoka,sans-serif"></b><div class="small muted" id="cMeta"></div></div></div>
+  <div class="tools">
+    <button class="ghost" id="tFriend">Arkadaş ekle</button>
+    <button class="ghost" id="tReport">Şikayet et</button>
+    <button class="ghost" id="tBlock">Engelle</button>
+    <button class="ghost" id="tEnd">Sohbeti bitir</button>
+  </div>
+  <div id="banner"></div>
+  <div class="rule">Telefon, adres, sosyal medya hesabı ve bağlantı paylaşılamaz; otomatik gizlenir.</div>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
+  <div class="answering" id="answering" hidden><span id="answeringTxt"></span><button class="ghost" id="answerCancel">Vazgeç</button></div>
+  <form class="send" id="sendForm"><button type="button" class="ghost" id="voiceBtn" style="flex:none">Ses</button><input type="text" id="msgIn" placeholder="Mesaj yaz…" autocomplete="off" maxlength="500"><button class="btn" type="submit" id="sendBtn">Gönder</button></form>
+</section>
+
+<section class="screen" id="s-banned">
+  <h2>Hesabın geçici olarak askıya alındı</h2>
+  <p id="bannedTxt"></p>
+  <p class="muted small">Hakkındaki şikayetler incelenene kadar eşleşme yapamazsın.</p>
+</section>
+
+<section class="screen" id="s-minor">
+  <h2>Bu site 18 yaş ve üzeri içindir</h2>
+  <p class="muted">18 yaşından küçük olduğun için siteyi kullanamazsın.</p>
+</section>
+</main>
+
+<footer class="foot">
+  <button class="link" data-doc="kvkk">Aydınlatma Metni</button>
+  <button class="link" data-doc="terms">Kullanım Koşulları</button>
+  <button class="link" id="deleteMe" hidden>Verilerimi sil</button>
+</footer>
+
+<div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" id="sheet"></div></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
