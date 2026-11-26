@@ -45,7 +45,16 @@ function av(n, size) {
   const h = hue(n), st = size ? ` style="width:${size}px;height:${size}px"` : '';
   return `<svg class="av"${st} viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="hsl(${h} 55% 58%)"/><path d="M14 22 L20 6 L28 18Z M50 22 L44 6 L36 18Z" fill="hsl(${h} 45% 40%)"/><ellipse cx="32" cy="36" rx="20" ry="17" fill="hsl(${h} 70% 90%)"/><path d="M12 30 Q32 18 52 30 Q50 40 40 38 Q32 34 24 38 Q14 40 12 30Z" fill="#0d3b47" opacity=".88"/><circle cx="23" cy="31" r="3" fill="#fff"/><circle cx="41" cy="31" r="3" fill="#fff"/><ellipse cx="32" cy="45" rx="4" ry="3" fill="hsl(${h} 45% 35%)"/></svg>`;
 }
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo({ top: 0 }); }
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('in-chat', id === 's-chat'); window.scrollTo({ top: 0 }); fitScreen(); }
+// Tam ekran: sohbet ekranı telefonun görünen yüksekliğine (klavye açıkken de) oturur
+function fitScreen() {
+  const vv = window.visualViewport, h = vv ? vv.height : window.innerHeight;
+  document.documentElement.style.setProperty('--vvh', h + 'px');
+  const top = document.querySelector('.top'); if (top) document.documentElement.style.setProperty('--top-h', top.offsetHeight + 'px');
+  if (document.body.classList.contains('in-chat')) { window.scrollTo(0, 0); const m = document.getElementById('msgs'); if (m) m.scrollTop = 1e9; }
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', fitScreen); visualViewport.addEventListener('scroll', () => { if (document.body.classList.contains('in-chat')) window.scrollTo(0, 0); }); }
+window.addEventListener('resize', fitScreen); window.addEventListener('orientationchange', fitScreen);
 const errMsg = e => { const m = (e && (e.message || e.error_description)) || ''; const code = Object.keys(ERR).find(k => m.includes(k)); return code ? ERR[code] : 'Bir sorun oluştu, tekrar dene.'; };
 const errCode = e => Object.keys(ERR).find(k => ((e && e.message) || '').includes(k));
 
@@ -382,9 +391,9 @@ $('answerCancel').onclick = () => { answeringQ = null; $('answering').hidden = t
 ['mousedown', 'pointerdown'].forEach(ev => $('sendBtn').addEventListener(ev, e => { if (document.activeElement === $('msgIn')) e.preventDefault(); }));
 const coarse = window.matchMedia('(pointer: coarse)').matches;
 let kbTimer = null;
-$('msgIn').addEventListener('focus', () => { clearTimeout(kbTimer); if (coarse) $('kbDown').hidden = false; });
-$('msgIn').addEventListener('blur', () => { kbTimer = setTimeout(() => { $('kbDown').hidden = true; }, 150); });
-$('kbDown').addEventListener('pointerdown', e => { e.preventDefault(); $('msgIn').blur(); $('kbDown').hidden = true; });
+$('msgIn').addEventListener('focus', () => { clearTimeout(kbTimer); if (coarse) { $('kbDown').hidden = false; document.body.classList.add('typing-mode'); setTimeout(fitScreen, 300); } });
+$('msgIn').addEventListener('blur', () => { kbTimer = setTimeout(() => { $('kbDown').hidden = true; document.body.classList.remove('typing-mode'); fitScreen(); }, 150); });
+$('kbDown').addEventListener('pointerdown', e => { e.preventDefault(); $('msgIn').blur(); $('kbDown').hidden = true; document.body.classList.remove('typing-mode'); });
 $('sendForm').onsubmit = async e => {
   e.preventDefault();
   const keepKb = document.activeElement === $('msgIn');
