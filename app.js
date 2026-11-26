@@ -1,8 +1,9 @@
 // Tek Kalbim — site uygulaması
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';
+// Veritabanı kütüphanesi sitenin kendisinden yüklenir (supabase.js, sürüm 2.119.0)
+const { createClient } = window.supabase;
 
 // ---------- Sabitler (veritabanıyla aynı olmalı) ----------
-const CONSENT_VERSION = 'v1';
+const CONSENT_VERSION = 'v2';
 const RANGES = ['18-29', '30-39', '40+'];
 const DAILY = 10, VOICE_MSGS = 20, VOICE_MAX = 60, COOLDOWN_H = 12;
 // Sıra önemli: veritabanı soruları numarasıyla tutar. Yeni soru sona eklenir, schema.sql'deki _nq() güncellenir.
@@ -32,7 +33,8 @@ const ERR = {
   VOICE_LOCKED: 'Sesli mesaj henüz kilitli.', VOICE_NOT_ALLOWED: 'Sesli mesaj için iki tarafın da izni gerekiyor.',
   FRIEND_SLOT_FULL: 'Tek arkadaş hakkın dolu.', FRIEND_COOLDOWN: `Arkadaşını çıkardıktan sonra ${COOLDOWN_H} saat beklemelisin.`,
   OTHER_HAS_FRIEND: 'Bu kişinin zaten bir arkadaşı var.', ALREADY_FRIENDS: 'Zaten arkadaşsınız.',
-  FRIEND_BUSY: 'Arkadaşın şu an başka bir sohbette.', NO_FRIEND: 'Arkadaşın yok.'
+  FRIEND_BUSY: 'Arkadaşın şu an başka bir sohbette.', NO_FRIEND: 'Arkadaşın yok.',
+  TOO_MANY_SIGNUPS: 'Bu bağlantıdan bugün çok fazla hesap açıldı. Yarın tekrar dene.'
 };
 
 // ---------- Kısayollar ----------
@@ -540,21 +542,69 @@ $('deleteMe').onclick = () => sheet(`<h3>Tüm verilerin silinsin mi?</h3><p>Rumu
   [['Evet, kalıcı olarak sil', async () => { closeSheet(); try { await removeVoices(); leaveChatLocal(); await rpc('delete_me'); await sb.auth.signOut(); show('s-gate'); info('Verilerin silindi', ''); $('deleteMe').hidden = true; } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
 
 // ---------- Hukuki metinler ----------
+// Hukuki metinler. Veri sorumlusu bilgileri (VS_AD, VS_EPOSTA) yayından önce doldurulur.
+const VS_AD = 'Tek Kalbim (veri sorumlusu bilgisi eklenecek)';
+const VS_EPOSTA = 'iletisim@tekkalbim.com';
+const DOC_DATE = '27 Kasım 2026';
 const DOCS = {
-  kvkk: `<h3>KVKK Aydınlatma Metni</h3><p class="draft">Taslaktır. Yayından önce bir hukukçuya kontrol ettirilmelidir.</p>
-<p>6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 10. maddesi uyarınca, kişisel verilerinizin işlenmesine ilişkin sizi bilgilendirmek isteriz.</p>
-<h4>1. Veri sorumlusu</h4><p>Tek Kalbim platformu; veri sorumlusunun adı/unvanı, adresi ve iletişim bilgileri yayından önce buraya eklenecektir.</p>
-<h4>2. İşlenen kişisel veriler</h4><ul><li>Beyan ettiğiniz cinsiyet ve yaş aralığı (doğum tarihi saklanmaz)</li><li>Size atanan rumuz ve oturum tanımlayıcısı</li><li>Yazılı mesajlar ve karşılıklı izinle gönderilen sesli mesajlar, şikayet ve engelleme kayıtları</li><li>IP adresi, bağlantı tarih-saat bilgileri, tarayıcı/cihaz bilgisi</li></ul>
-<h4>3. İşleme amaçları</h4><ul><li>Eşleştirme ve sohbet hizmetinin sunulması</li><li>18 yaş sınırı ve kullanım kurallarının uygulanması</li><li>Şikayetlerin incelenmesi, kötüye kullanımın önlenmesi</li><li>5651 sayılı Kanun başta olmak üzere mevzuattan doğan yükümlülüklerin yerine getirilmesi</li></ul>
-<h4>4. Hukuki sebepler</h4><p>KVKK m.5/2 kapsamında; sözleşmenin kurulması ve ifası (c), hukuki yükümlülüğün yerine getirilmesi (ç) ve temel hak ve özgürlüklerinize zarar vermemek kaydıyla meşru menfaat (f).</p>
-<h4>5. Aktarım</h4><p>Verileriniz, talep halinde yetkili kamu kurum ve kuruluşlarına ve hizmetin barındırıldığı altyapı sağlayıcılarına mevzuata uygun şekilde aktarılabilir. Hizmet altyapısı yurt dışında bulunduğundan aktarım KVKK m.9 hükümlerine uygun olarak yapılır.</p>
-<h4>6. Toplama yöntemi</h4><p>Veriler, site üzerinden elektronik ortamda, sizin beyanınız ve sistem kayıtları yoluyla otomatik olarak toplanır.</p>
-<h4>7. Saklama süresi</h4><p>Yazılı ve sesli mesajlar sohbet bitiminde silinir; şikayete konu sohbetler inceleme süresince saklanır. Trafik bilgileri mevzuatta öngörülen süre boyunca saklanır. Kesin süreler yayından önce eklenecektir.</p>
-<h4>8. Haklarınız (KVKK m.11)</h4><ul><li>Verilerinizin işlenip işlenmediğini öğrenme ve bilgi talep etme</li><li>İşleme amacını ve amaca uygun kullanılıp kullanılmadığını öğrenme</li><li>Aktarıldığı üçüncü kişileri bilme</li><li>Eksik veya yanlış işlenmişse düzeltilmesini, şartları oluşmuşsa silinmesini isteme</li><li>Otomatik sistemlerle analiz sonucu aleyhinize bir sonuç çıkmasına itiraz etme</li><li>Kanuna aykırı işleme nedeniyle zararın giderilmesini talep etme</li></ul>
-<p>Verilerinizi sitenin altındaki "Verilerimi sil" bağlantısıyla dilediğiniz an silebilirsiniz. Diğer başvurularınızı yayından önce belirtilecek e-posta adresine iletebilirsiniz.</p>`,
-  terms: `<h3>Kullanım Koşulları</h3><p class="draft">Taslaktır.</p><ul><li>Site yalnızca 18 yaş ve üzeri kişiler içindir. Yaşını yanlış beyan eden kullanıcılar kalıcı olarak engellenir.</li><li>Taciz, tehdit, hakaret, nefret söylemi ve müstehcen içerik yasaktır.</li><li>Telefon, adres, sosyal medya hesabı gibi kişisel bilgiler istenemez ve paylaşılamaz.</li><li>Para isteme, reklam, dolandırıcılık ve başka sitelere yönlendirme yasaktır.</li><li>Her kullanıcının günde ${DAILY} eşleşme hakkı vardır.</li><li>Her kullanıcının aynı anda yalnızca 1 arkadaşı olabilir; arkadaşlıktan çıkardıktan sonra yeni arkadaş eklemek için ${COOLDOWN_H} saat beklenir.</li><li>Sesli mesaj, açılış soruları hariç sohbette ${VOICE_MSGS} mesaj geçtikten ya da arkadaş olduktan sonra ve iki tarafın da izniyle açılır; en fazla ${VOICE_MAX} saniyedir. Sesli mesajların kaydedilmesi ve paylaşılması yasaktır.</li><li>Farklı kişilerden kısa sürede birden fazla şikayet alan veya 18 yaşından küçük olduğundan şüphelenilen kullanıcılar inceleme süresince askıya alınır.</li><li>Kurallara uymayanlar uyarılmadan engellenebilir; suç teşkil eden durumlar yetkili makamlara bildirilir.</li></ul>`,
-  cookie: `<h3>Oturum bilgisi</h3><p>Hesap açmadan kullandığın için, rumuzunu, arkadaşını ve engellediğin kişileri hatırlayabilmemiz adına tarayıcında zorunlu bir oturum bilgisi tutulur. Reklam veya takip amaçlı çerez kullanılmaz.</p><p class="muted small">Tarayıcı verilerini silersen ya da başka bir cihazdan girersen rumuzun ve arkadaşın kaybolur.</p>`
+  kvkk: `<h3>KVKK Aydınlatma Metni</h3><p class="small muted">Son güncelleme: ${DOC_DATE}</p>
+<p>Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun ("KVKK") 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, Tek Kalbim'i kullanırken kişisel verilerinin nasıl işlendiğini anlatır.</p>
+<h4>1. Veri sorumlusu</h4><p>${VS_AD}. İletişim: ${VS_EPOSTA}</p>
+<h4>2. Hangi verileri işliyoruz?</h4><ul>
+<li><b>Profil bilgileri:</b> sana verilen rumuz, beyan ettiğin cinsiyet, doğum tarihinden hesaplanan yaş aralığı, seçtiğin ilgi alanları, kabul ettiğin metinlerin sürümü ve kabul zamanı. Doğum tarihin yalnızca yaş kontrolü için kullanılır, <b>saklanmaz</b>.</li>
+<li><b>İletişim içerikleri:</b> sohbetlerdeki yazılı mesajlar, seçilen açılış soruları ve cevapları, iki tarafın izniyle gönderilen sesli mesajlar.</li>
+<li><b>İşlem güvenliği bilgileri:</b> IP adresi, bağlantı tarih ve saatleri, oturum tanımlayıcısı, son görülme zamanı, kayıt ve bağlantı olayları.</li>
+<li><b>Kullanım kayıtları:</b> eşleşmeler, arkadaşlık, sohbet sonu tercihleri, engelleme ve şikayet kayıtları.</li>
+<li><b>Bildirim aboneliği:</b> bildirimleri açarsan cihazının bildirim adresi.</li></ul>
+<p>Hiçbir zaman adını, telefonunu, e-postanı veya fotoğrafını istemeyiz. Sohbetlerde sağlık, din, siyasi görüş gibi özel nitelikli kişisel verilerini paylaşmamanı rica ederiz; bu tür verileri işlemeyi amaçlamıyoruz.</p>
+<h4>3. Hangi amaçlarla işliyoruz?</h4><ul>
+<li>Seni uygun kişilerle eşleştirmek, sohbet, arkadaşlık, sesli mesaj ve bildirim hizmetlerini sunmak</li>
+<li>18 yaş sınırını ve kullanım kurallarını uygulamak</li>
+<li>Şikayetleri incelemek; taciz, dolandırıcılık ve sahte hesapları önlemek</li>
+<li>5651 sayılı Kanun başta olmak üzere mevzuattan doğan yükümlülükleri yerine getirmek, yetkili makamların talebine cevap vermek</li></ul>
+<h4>4. Hukuki sebepler</h4><p>KVKK m.5/2 kapsamında: hizmet sözleşmesinin kurulması ve ifası (c), hukuki yükümlülüğün yerine getirilmesi (ç), bir hakkın tesisi, kullanılması veya korunması (e) ve temel hak ve özgürlüklerine zarar vermemek kaydıyla meşru menfaatimiz (f).</p>
+<h4>5. Toplama yöntemi</h4><p>Veriler, siteyi kullanırken senin beyanınla ve sistem tarafından otomatik olarak, elektronik ortamda toplanır.</p>
+<h4>6. Kimlere aktarıyoruz?</h4><ul>
+<li><b>Altyapı hizmet sağlayıcıları:</b> veritabanı ve dosya depolama için Supabase (sunucular Almanya'da), sitenin yayını için GitHub (ABD). Bu aktarımlar KVKK m.9 kapsamında yurt dışına aktarım niteliğindedir.</li>
+<li><b>Bildirim servisleri:</b> bildirimleri açarsan, bildirimin cihazına ulaşması için telefonunun ya da tarayıcının bildirim servisine (Apple, Google, Mozilla gibi) şifreli bildirim iletilir. Bildirimde mesaj içeriği bulunmaz.</li>
+<li><b>Yetkili kamu kurum ve kuruluşları:</b> yalnızca mevzuatın gerektirdiği hallerde ve resmi talep üzerine.</li></ul>
+<p>Verilerini reklam amacıyla kullanmayız, satmayız ve üçüncü kişilerle paylaşmayız.</p>
+<h4>7. Ne kadar saklıyoruz?</h4><ul>
+<li>Yazılı ve sesli mesajlar sohbet bitince silinir. Biten sohbetin kalan kaydı 30 gün içinde tamamen silinir.</li>
+<li>Şikayet edilen sohbetler inceleme süresince, inceleme bittikten sonra en fazla 6 ay saklanır.</li>
+<li>IP adresi ve bağlantı kayıtları, 5651 sayılı Kanun gereği 2 yıl saklanır; hesabını silsen de bu süre boyunca tutulur.</li>
+<li>180 gün boyunca hiç girmediğin hesap otomatik olarak silinir.</li>
+<li>Hesabını istediğin an sitenin altındaki <b>Verilerimi sil</b> bağlantısıyla silebilirsin.</li></ul>
+<h4>8. Haklarınız (KVKK m.11)</h4><p>Kişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme; işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme; yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme; eksik veya yanlış işlenmişse düzeltilmesini, şartları oluşmuşsa silinmesini veya yok edilmesini ve bu işlemlerin aktarılan üçüncü kişilere bildirilmesini isteme; münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhine bir sonuç çıkmasına itiraz etme; kanuna aykırı işleme nedeniyle zarara uğrarsan zararın giderilmesini talep etme haklarına sahipsin.</p>
+<p>Başvurunu ${VS_EPOSTA} adresine, rumuzunu belirterek iletebilirsin. Başvurular en geç 30 gün içinde ücretsiz olarak sonuçlandırılır. Cevabımızı yeterli bulmazsan Kişisel Verileri Koruma Kurulu'na şikayette bulunabilirsin.</p>`,
+  terms: `<h3>Kullanım Koşulları</h3><p class="small muted">Son güncelleme: ${DOC_DATE}</p>
+<h4>1. Kabul</h4><p>Tek Kalbim'i kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan siteyi kullanma.</p>
+<h4>2. Yaş sınırı</h4><p>Site yalnızca 18 yaş ve üzeri kişiler içindir. Yaşını yanlış beyan ettiği anlaşılan veya 18 yaşından küçük olduğundan şüphelenilen hesaplar, inceleme süresince askıya alınır ve gerekirse kalıcı olarak engellenir.</p>
+<h4>3. Hesapsız ve anonim kullanım</h4><p>Kayıt için ad, telefon veya e-posta istenmez; sana rastgele bir rumuz verilir. Hesabın yalnızca bu cihazdaki tarayıcına bağlıdır. Tarayıcı verilerini silersen ya da başka cihazdan girersen rumuzun ve arkadaşın kaybolur.</p>
+<h4>4. Davranış kuralları</h4><ul>
+<li>Taciz, tehdit, hakaret, nefret söylemi ve ayrımcılık yasaktır.</li>
+<li>Müstehcen, cinsel içerikli veya şiddet içeren mesaj ve ses gönderilemez.</li>
+<li>Telefon, adres, sosyal medya hesabı gibi kişisel bilgiler istenemez ve paylaşılamaz; bu bilgiler otomatik olarak gizlenir.</li>
+<li>Para veya hediye istemek, reklam, dolandırıcılık ve başka sitelere yönlendirme yasaktır.</li>
+<li>Başkasının yerine geçmek, sahte veya çoklu hesap açmak yasaktır. Aynı bağlantıdan günde açılabilecek hesap sayısı sınırlıdır.</li>
+<li>Sesli mesajları kaydetmek, ekran görüntüsü alarak paylaşmak veya sohbetleri ifşa etmek yasaktır.</li></ul>
+<h4>5. Site kuralları</h4><ul>
+<li>Her kullanıcının günde ${DAILY} eşleşme hakkı vardır; haklar gece yarısı yenilenir.</li>
+<li>Aynı anda yalnızca 1 arkadaşın olabilir; arkadaşlıktan çıkardıktan sonra yeni arkadaş eklemek için ${COOLDOWN_H} saat beklenir.</li>
+<li>Sesli mesaj, açılış soruları hariç ${VOICE_MSGS} mesaj sonra ya da arkadaş olunca, iki tarafın izniyle açılır ve en fazla ${VOICE_MAX} saniyedir.</li></ul>
+<h4>6. İçerikten sorumluluk</h4><p>Gönderdiğin mesaj ve seslerden yalnızca sen sorumlusun. Tek Kalbim, 5651 sayılı Kanun kapsamında kullanıcı içeriklerini kontrol etmekle yükümlü değildir; hukuka aykırı içerikten şikayet veya resmi bildirim yoluyla haberdar olduğunda içeriği kaldırır ve gerekli önlemleri alır.</p>
+<h4>7. Şikayet ve yaptırımlar</h4><p>Kurallara aykırı davranan kişiyi sohbet ekranındaki <b>Şikayet et</b> düğmesiyle bildirebilirsin; şikayet edilen sohbet incelenmek üzere saklanır. Kısa sürede birden fazla kişiden şikayet alan hesaplar otomatik olarak askıya alınır. Kural ihlalinde uyarı yapılmadan askıya alma veya kalıcı engelleme uygulanabilir. Suç oluşturabilecek durumlar ve yetkili makamların talepleri mevzuat çerçevesinde değerlendirilir.</p>
+<h4>8. Hizmetin niteliği</h4><p>Tek Kalbim ücretsiz sunulur. Hizmetin kesintisiz veya hatasız olacağı garanti edilmez; özellikler önceden haber verilmeden değiştirilebilir. Tanıştığın kişilerle site dışında görüşmeye karar verirsen kişisel güvenliğin için kalabalık ve herkese açık yerleri tercih et.</p>
+<h4>9. Hesabın silinmesi</h4><p>Sitenin altındaki <b>Verilerimi sil</b> bağlantısıyla hesabını ve verilerini istediğin an silebilirsin. Yasal saklama süresi olan bağlantı kayıtları bu sürenin sonunda silinir.</p>
+<h4>10. Değişiklikler ve iletişim</h4><p>Bu koşullar güncellenebilir; önemli değişikliklerde sitede bildirim yapılır. Sorun, şikayet ve hukuka aykırı içerik bildirimleri için: ${VS_EPOSTA}</p>`,
+  cookie: `<h3>Çerezler ve cihazda saklanan bilgiler</h3>
+<p>Tek Kalbim reklam, analiz veya takip çerezi kullanmaz. Tarayıcında yalnızca sitenin çalışması için zorunlu olan bilgiler saklanır:</p><ul>
+<li><b>Oturum bilgisi:</b> hesap açmadan kullandığın için seni tanımamızı sağlar; rumuzun, arkadaşın ve engellediğin kişiler buna bağlıdır.</li>
+<li><b>Tercihlerin:</b> arama filtrelerin, gece/gündüz teması ve 18 yaş engeli bilgisi.</li></ul>
+<p>Yazı tipleri ve kullanılan tüm dosyalar sitenin kendisinden yüklenir; başka bir firmaya istek gönderilmez.</p>
+<p class="muted small">Tarayıcı verilerini silersen bu bilgiler de silinir ve hesabına bir daha ulaşamazsın.</p>`
 };
+
 document.addEventListener('click', e => { const b = e.target.closest('[data-doc]'); if (!b) return; e.preventDefault(); sheet(DOCS[b.dataset.doc], [['Kapat', closeSheet, 'btn']]); });
 
 // ---------- Telefon bildirimleri ----------
