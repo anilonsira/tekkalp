@@ -1,4 +1,4 @@
-// Tek Kalp — site uygulaması
+// Tek Kalbim — site uygulaması
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';
 
 // ---------- Sabitler (veritabanıyla aynı olmalı) ----------
@@ -58,8 +58,8 @@ const info = (title, text) => sheet(`<h3>${esc(title)}</h3>${text ? `<p>${esc(te
 $('veil').addEventListener('click', e => { if (e.target === $('veil')) closeSheet(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 
-const LOGO = '<svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#0d3b47"/><path d="M32 54C32 54 8 39.5 8 23.5 8 15.5 14 10 21 10c4.8 0 8.8 2.8 11 6.6C34.2 12.8 38.2 10 43 10c7 0 13 5.5 13 13.5C56 39.5 32 54 32 54Z" fill="#ff6b5a"/><circle cx="32" cy="27" r="5" fill="#0d3b47"/><path d="M29.4 30h5.2l1.6 11h-8.4z" fill="#0d3b47"/></svg>';
-$('brand').innerHTML = LOGO + 'Tek Kalp';
+const LOGO = '<svg viewBox="0 0 64 64" width="32" height="32" aria-hidden="true"><defs><linearGradient id="tkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff2a3a"/><stop offset="1" stop-color="#b8001c"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0d3b47"/><path d="M32 56C32 56 6 41 6 22.5 6 13.5 12.8 7 21 7c5 0 9 2.6 11 6.8C34 9.6 38 7 43 7c8.2 0 15 6.5 15 15.5C58 41 32 56 32 56Z" fill="url(#tkg)"/><path d="M13.5 18.5c1.6-4.2 5-6.3 9-6.3" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="26" r="5.2" fill="#0d3b47"/><path d="M29.3 29.5h5.4l1.7 11.5h-8.8z" fill="#0d3b47"/></svg>';
+$('brand').innerHTML = LOGO + 'Tek Kalbim';
 $('masks').innerHTML = ['Neşeli Tilki', 'Uykulu Penguen', 'Meraklı Baykuş'].map(n => `<span class="bob">${av(n)}</span>`).join('');
 
 // ---------- Bağlantı ----------
@@ -371,7 +371,7 @@ $('deleteMe').onclick = () => sheet(`<h3>Tüm verilerin silinsin mi?</h3><p>Rumu
 const DOCS = {
   kvkk: `<h3>KVKK Aydınlatma Metni</h3><p class="draft">Taslaktır. Yayından önce bir hukukçuya kontrol ettirilmelidir.</p>
 <p>6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 10. maddesi uyarınca, kişisel verilerinizin işlenmesine ilişkin sizi bilgilendirmek isteriz.</p>
-<h4>1. Veri sorumlusu</h4><p>Tek Kalp platformu; veri sorumlusunun adı/unvanı, adresi ve iletişim bilgileri yayından önce buraya eklenecektir.</p>
+<h4>1. Veri sorumlusu</h4><p>Tek Kalbim platformu; veri sorumlusunun adı/unvanı, adresi ve iletişim bilgileri yayından önce buraya eklenecektir.</p>
 <h4>2. İşlenen kişisel veriler</h4><ul><li>Beyan ettiğiniz cinsiyet ve yaş aralığı (doğum tarihi saklanmaz)</li><li>Size atanan rumuz ve oturum tanımlayıcısı</li><li>Yazılı mesajlar ve karşılıklı izinle gönderilen sesli mesajlar, şikayet ve engelleme kayıtları</li><li>IP adresi, bağlantı tarih-saat bilgileri, tarayıcı/cihaz bilgisi</li></ul>
 <h4>3. İşleme amaçları</h4><ul><li>Eşleştirme ve sohbet hizmetinin sunulması</li><li>18 yaş sınırı ve kullanım kurallarının uygulanması</li><li>Şikayetlerin incelenmesi, kötüye kullanımın önlenmesi</li><li>5651 sayılı Kanun başta olmak üzere mevzuattan doğan yükümlülüklerin yerine getirilmesi</li></ul>
 <h4>4. Hukuki sebepler</h4><p>KVKK m.5/2 kapsamında; sözleşmenin kurulması ve ifası (c), hukuki yükümlülüğün yerine getirilmesi (ç) ve temel hak ve özgürlüklerinize zarar vermemek kaydıyla meşru menfaat (f).</p>
