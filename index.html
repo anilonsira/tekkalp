@@ -8,6 +8,10 @@
 <meta name="theme-color" content="#0d3b47">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tek Kalbim">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -67,6 +71,7 @@
     <button class="btn" id="searchGo">Eşleşme ara</button>
   </div>
   <div class="friend" id="friendBox"></div>
+  <div class="pushbox" id="pushBox" hidden></div>
 </section>
 
 <section class="screen" id="s-wait">
@@ -102,6 +107,7 @@
   <div class="rule">Telefon, adres, sosyal medya hesabı ve bağlantı paylaşılamaz; otomatik gizlenir.</div>
   <div class="msgs" id="msgs" aria-live="polite"></div>
   <div class="typing" id="typing" hidden></div>
+  <div class="kbrow"><button type="button" class="kbdown" id="kbDown" hidden aria-label="Klavyeyi kapat"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Klavyeyi kapat</button></div>
   <div class="answering" id="answering" hidden><span id="answeringTxt"></span><button class="ghost" id="answerCancel">Vazgeç</button></div>
   <form class="send" id="sendForm"><button type="button" class="ico locked" id="voiceBtn" aria-label="Sesli mesaj" title="Sesli mesaj"><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="21"/><circle class="prg" id="voiceRing" cx="24" cy="24" r="21" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 24 24)"/><g class="mic" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="19.5" y="12" width="9" height="15" rx="4.5" fill="currentColor" stroke="none"/><path d="M15.5 23.5a8.5 8.5 0 0 0 17 0M24 32v4.5M19.5 36.5h9"/></g></svg></button><input type="text" id="msgIn" placeholder="Mesaj yaz…" autocomplete="off" maxlength="500"><button class="ico" type="submit" id="sendBtn" aria-label="Gönder" title="Gönder"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 24h18M25 16l8 8-8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
 </section>
