@@ -16,6 +16,9 @@ const QS = [
   'Bir ilişkide senin için en önemli şey ne?', 'Romantik bir sürpriz yapsan ne yapardın?', 'Seni bir insana bağlayan ilk şey ne olur?'
 ];
 const ROMANTIC_FROM = 16;
+// İlgi alanları (veritabanındaki _tags() listesiyle aynı olmalı)
+const TAGS = ['Müzik', 'Film & dizi', 'Kitap', 'Spor', 'Futbol', 'Fitness', 'Doğa & kamp', 'Seyahat', 'Yemek', 'Kahve', 'Oyun', 'Teknoloji', 'Sanat', 'Fotoğraf', 'Dans', 'Hayvanlar', 'Tarih', 'Psikoloji', 'Bilim', 'Moda', 'Yoga', 'Satranç', 'Gönüllülük', 'Tiyatro'];
+const MAX_TAGS = 5;
 const REASONS = [['taciz', 'Taciz veya rahatsız edici davranış'], ['mustehcen', 'Müstehcen içerik'],
   ['18_alti', '18 yaşından küçük olduğunu düşünüyorum'], ['kisisel_bilgi', 'Kişisel bilgi isteme veya paylaşma'],
   ['dolandiricilik', 'Para, reklam veya dolandırıcılık'], ['nefret', 'Nefret söylemi veya hakaret'], ['diger', 'Diğer']];
@@ -103,6 +106,8 @@ async function route() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { $('deleteMe').hidden = true; return show('s-gate'); }
   ME = session.user.id; $('deleteMe').hidden = false;
+  if (!window.__ping) { window.__ping = setInterval(() => sb.rpc('ping'), 30000); sb.rpc('ping'); }
+  if (!window.__homePoll) window.__homePoll = setInterval(homePoll, 12000);
   try { await refresh(); } catch (e) { return info('Bağlantı sorunu', errMsg(e)); }
   const p = ST.profile;
   if (!p) return show('s-gate');
@@ -146,12 +151,20 @@ function renderProfile() {
   $('nickAv').innerHTML = av(p.nick); $('nickTxt').textContent = p.nick;
   $('reroll').textContent = p.rerolls_left ? `Başka rumuz ver (${p.rerolls_left} hak)` : 'Rumuz değiştirme hakkın bitti';
   $('reroll').disabled = !p.rerolls_left;
+  if (!profTags) profTags = new Set(p.interests || []);
+  renderTagPicker($('profTags'), profTags);
 }
+let profTags = null;
+function renderTagPicker(box, set) {
+  box.innerHTML = TAGS.map(t => `<button type="button" class="chip" aria-pressed="${set.has(t)}" data-t="${esc(t)}" ${!set.has(t) && set.size >= MAX_TAGS ? 'disabled' : ''}>${esc(t)}</button>`).join('');
+  box.onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; const t = b.dataset.t; set.has(t) ? set.delete(t) : set.size < MAX_TAGS && set.add(t); renderTagPicker(box, set); };
+}
+const tagLine = arr => arr && arr.length ? arr.join(' · ') : '';
 $('reroll').onclick = async () => { try { ST = await rpc('reroll_nick'); renderProfile(); } catch (e) { info('Olmadı', errMsg(e)); } };
 function seg(el, cb) { el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; el.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); cb(b.dataset.v); }); }
 seg($('myGender'), v => { pickedGender = v; $('profGo').disabled = false; });
 $('profGo').onclick = () => sheet(`<h3>${gName(pickedGender)} olarak devam edilsin mi?</h3><p>Cinsiyet seçimin sonradan değiştirilemez.</p>`,
-  [['Evet, devam et', async () => { closeSheet(); try { ST = await rpc('set_gender', { p_gender: pickedGender }); route(); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
+  [['Evet, devam et', async () => { closeSheet(); try { await rpc('set_interests', { p_tags: [...(profTags || [])] }); ST = await rpc('set_gender', { p_gender: pickedGender }); route(); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
 
 // ---------- Arama ----------
 let savedR = null; try { savedR = JSON.parse(store.get('tk_wr') || 'null'); } catch {}
@@ -164,13 +177,20 @@ function renderSearch() {
   $('wantRange').innerHTML = RANGES.map(r => `<button class="chip" aria-pressed="${want.r.has(r)}" data-r="${r}">${r}</button>`).join('');
   $('searchGo').disabled = !want.r.size;
   $('daily').textContent = `Bugün kalan eşleşme hakkın: ${p.matches_left} / ${DAILY}`;
+  $('myTags').textContent = tagLine(p.interests) || 'Henüz seçmedin. Ortak ilgi alanı olanlarla öncelikli eşleşirsin.';
   renderFriend();
 }
+$('editTags').onclick = () => {
+  const set = new Set(ST.profile.interests || []);
+  sheet(`<h3>İlgi alanların</h3><p class="muted small">En fazla ${MAX_TAGS} tane seç. Ortak ilgi alanı olanlarla öncelikli eşleşirsin.</p><div class="chips" id="tagEdit"></div>`,
+    [['Kaydet', async () => { try { ST = await rpc('set_interests', { p_tags: [...set] }); closeSheet(); renderSearch(); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]],
+    () => renderTagPicker($('tagEdit'), set));
+};
 $('wantRange').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; const r = b.dataset.r; want.r.has(r) ? want.r.delete(r) : want.r.add(r); store.set('tk_wr', JSON.stringify([...want.r])); renderSearch(); });
 function renderFriend() {
   const box = $('friendBox'), p = ST.profile;
   if (ST.friend) {
-    box.innerHTML = `<div style="display:flex;gap:10px;align-items:center">${av(ST.friend.nick, 40)}<div><b>${esc(ST.friend.nick)}</b><div class="small muted">Arkadaşın (1/1)</div></div></div><div class="row"><button class="btn" id="fChat">Sohbet et</button><button class="ghost" id="rmFriend">Çıkar</button></div>`;
+    box.innerHTML = `<div style="display:flex;gap:10px;align-items:center">${av(ST.friend.nick, 40)}<div><b>${esc(ST.friend.nick)}</b><div class="small muted">${seenText(ST.friend.last_seen, false)}</div></div></div><div class="row"><button class="btn" id="fChat">Sohbet et</button><button class="ghost" id="rmFriend">Çıkar</button></div>`;
     $('fChat').onclick = async () => { try { const id = await rpc('open_friend_chat'); enterChat(id); } catch (e) { info('Olmadı', errMsg(e)); } };
     $('rmFriend').onclick = () => sheet(`<h3>Arkadaşlıktan çıkarılsın mı?</h3><p>${esc(ST.friend.nick)} arkadaş listenden çıkar. Yeni bir arkadaş ekleyebilmek için <b>${COOLDOWN_H} saat</b> beklemen gerekir.</p>`,
       [['Evet, çıkar', async () => { closeSheet(); try { ST = await rpc('remove_friend'); renderSearch(); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
@@ -218,7 +238,9 @@ async function enterChat(id) {
     CH.channel = sb.channel('chat-' + id)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${id}` }, p => addMsg(p.new))
       .on('broadcast', { event: 'typing' }, p => { if (p.payload && p.payload.u !== ME) showTyping(); })
-      .subscribe();
+      .on('broadcast', { event: 'read' }, p => { if (CH && p.payload && p.payload.u !== ME) { CH.theirRead = Math.max(CH.theirRead || 0, p.payload.upto || 0); updTicks(); } })
+      .on('presence', { event: 'sync' }, () => { if (!CH) return; const st = CH.channel.presenceState(); CH.online = Object.values(st).flat().some(x => x.u && x.u !== ME); if (ST && ST.chat) renderChat(); })
+      .subscribe(s => { if (s === 'SUBSCRIBED' && CH) { try { CH.channel.track({ u: ME }); } catch {} } });
     CH.poll = setInterval(pollChat, 4000);
   }
   await refresh();
@@ -226,6 +248,29 @@ async function enterChat(id) {
   await fetchMsgs();
   CH.loaded = true;
   renderChat();
+  markRead();
+}
+let readTimer = null;
+function markRead() {
+  if (!CH || document.hidden || !CH.lastPartnerId || CH.lastPartnerId <= (CH.sentRead || 0)) return;
+  clearTimeout(readTimer);
+  readTimer = setTimeout(() => {
+    if (!CH) return; const upto = CH.lastPartnerId; CH.sentRead = upto;
+    sb.rpc('mark_read', { p_chat: CH.id, p_upto: upto });
+    try { CH.channel.send({ type: 'broadcast', event: 'read', payload: { u: ME, upto } }); } catch {}
+  }, 400);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) markRead(); });
+function updTicks() {
+  if (!CH) return;
+  document.querySelectorAll('#msgs .m.me[data-id]').forEach(el => { const r = +el.dataset.id <= (CH.theirRead || 0); const tk = el.querySelector('.tick'); if (tk) { tk.textContent = r ? '✓✓' : '✓'; tk.classList.toggle('read', r); tk.title = r ? 'Okundu' : 'Gönderildi'; } });
+}
+const isRecent = iso => iso && Date.now() - new Date(iso).getTime() < 70000;
+function seenText(iso, live) {
+  if (live || isRecent(iso)) return 'Çevrimiçi';
+  if (!iso) return 'Son görülme bilinmiyor';
+  const d = new Date(iso), today = new Date().toDateString() === d.toDateString();
+  return 'Son görülme ' + (today ? hhmm(iso) : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + hhmm(iso));
 }
 function leaveChatLocal() { if (!CH) return; clearInterval(CH.poll); sb.removeChannel(CH.channel); CH = null; answeringQ = null; }
 async function fetchMsgs() {
@@ -240,6 +285,7 @@ function renderChat() {
   const c = ST.chat, p = c.partner;
   if (!c.is_friend_chat && !c.my_questions) {
     $('pAv').innerHTML = av(p.nick); $('pNick').textContent = p.nick; $('pMeta').textContent = `${gName(p.gender)} · ${p.age_range}`;
+    $('pTags').textContent = c.common && c.common.length ? 'Ortak ilgi alanlarınız: ' + tagLine(c.common) : (p.interests && p.interests.length ? 'İlgi alanları: ' + tagLine(p.interests) : '');
     if (!$('qlist').children.length) {
       qPicked = [];
       $('qlist').innerHTML = QS.map((q, i) => `<button class="q" aria-pressed="false" data-i="${i}">${esc(q)}${i >= ROMANTIC_FROM ? ' <span class="rtag">Romantik</span>' : ''}</button>`).join('');
@@ -249,8 +295,12 @@ function renderChat() {
     return;
   }
   $('qlist').innerHTML = '';
+  if (CH) CH.meta = { id: CH.id, nick: p.nick, friendChat: c.is_friend_chat, isFriend: c.is_friend };
   $('cAv').innerHTML = av(p.nick); $('cNick').textContent = p.nick;
-  $('cMeta').textContent = c.is_friend_chat ? 'Arkadaşın' : `${gName(p.gender)} · ${p.age_range}`;
+  $('cMeta').textContent = (c.is_friend_chat ? 'Arkadaşın' : `${gName(p.gender)} · ${p.age_range}`) + ' · ' + seenText(p.last_seen, CH && CH.online);
+  $('cMeta').classList.toggle('online', !!(CH && CH.online) || isRecent(p.last_seen));
+  $('cTags').textContent = c.common && c.common.length ? 'Ortak ilgi: ' + tagLine(c.common) : (p.interests && p.interests.length ? 'İlgi alanları: ' + tagLine(p.interests) : '');
+  if (CH) { CH.theirRead = Math.max(CH.theirRead || 0, c.their_read || 0); updTicks(); }
   const open = c.is_friend_chat || c.their_submitted;
   $('msgIn').disabled = $('sendBtn').disabled = !open;
   $('msgIn').placeholder = open ? 'Mesaj yaz…' : 'Karşı tarafın sorularını seçmesi bekleniyor…';
@@ -303,8 +353,10 @@ function addMsg(m) {
     });
   } else d.textContent = m.body;
   const tm = document.createElement('span'); tm.className = 't'; tm.textContent = hhmm(m.created_at); d.append(tm);
-  if (!mine) { $('typing').hidden = true; if (CH.loaded) { ding('msg'); bumpUnread(); } }
+  if (mine) { d.dataset.id = m.id; const tk = document.createElement('span'); tk.className = 'tick'; tm.append(' ', tk); }
+  if (!mine) { CH.lastPartnerId = Math.max(CH.lastPartnerId || 0, m.id); $('typing').hidden = true; if (CH.loaded) { ding('msg'); bumpUnread(); markRead(); } }
   $('msgs').append(d); $('msgs').scrollTop = 1e9;
+  if (mine) updTicks();
 }
 let typingTimer = null, lastTypingSent = 0;
 function showTyping() {
@@ -361,14 +413,43 @@ $('tReport').onclick = () => {
 $('tBlock').onclick = () => sheet(`<h3>${esc(ST.chat.partner.nick)} engellensin mi?</h3><p>Bir daha karşına çıkmaz ve sohbet sona erer.</p>`,
   [['Engelle', async () => { closeSheet(); await removeVoices(); try { await rpc('block_user', { p_chat: CH.id }); finishChat('Kişi engellendi.'); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
 const askEnd = () => sheet(`<h3>Sohbet bitirilsin mi?</h3><p>Mesajlar silinir.${ST.chat?.is_friend ? ' Arkadaşın olduğu için ona ana ekrandan tekrar ulaşabilirsin.' : ''}</p>`,
-  [['Bitir', async () => { closeSheet(); await removeVoices(); try { await rpc('end_chat', { p_chat: CH.id }); finishChat('Sohbet sona erdi.'); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
+  [['Bitir', async () => { closeSheet(); await removeVoices(); try { await rpc('end_chat', { p_chat: CH.id }); finishChat('Sohbet sona erdi.', true); } catch (e) { info('Olmadı', errMsg(e)); } }, 'btn'], ['Vazgeç', closeSheet]]);
 $('tEnd').onclick = askEnd; $('qEnd').onclick = askEnd;
 async function removeVoices() { if (CH && CH.voicePaths.length) await sb.storage.from('voice').remove(CH.voicePaths).catch(() => {}); }
-async function finishChat(note) { if (CH) CH.ended = true; leaveChatLocal(); await refresh(); renderSearch(); show('s-search'); info(note, 'Yeni bir eşleşme arayabilirsin.'); }
+async function finishChat(note, ask) {
+  const past = CH && CH.meta ? CH.meta : null;
+  if (CH) CH.ended = true; leaveChatLocal(); await refresh(); renderSearch(); show('s-search');
+  if (ask && past && !past.friendChat && !past.isFriend && !ST.friend && !ST.profile.friend_cooldown_until) return askLike(past, note);
+  info(note, 'Yeni bir eşleşme arayabilirsin.');
+}
+const likedNicks = new Set();
+function askLike(past, title) {
+  sheet(`<h3>${esc(title)}</h3><p><b>${esc(past.nick)}</b> ile tekrar konuşmak ister misin?</p><p class="muted small">İkiniz de "Evet" derseniz arkadaş olursunuz ve tek arkadaş hakkınız kullanılır. Karşı taraf, sen "Hayır" dersen bunu görmez.</p>`,
+    [['Evet, isterim', async () => {
+      closeSheet();
+      try {
+        const r = await rpc('like_partner', { p_chat: past.id, p_like: true });
+        if (r.friends) { ding('match'); await refresh(); renderSearch(); return info('Karşılıklı!', `${past.nick} de seninle konuşmak istiyordu. Artık arkadaşsınız.`); }
+        if (r.mutual) return info('Karşılıklı ama…', 'İkiniz de istediniz, ancak birinizin arkadaş hakkı şu an dolu.');
+        likedNicks.add(past.nick);
+        info('Cevabın kaydedildi', `${past.nick} de isterse arkadaş olacaksınız; sana haber vereceğiz.`);
+      } catch (e) { info('Olmadı', errMsg(e)); }
+    }, 'btn'], ['Hayır', () => { closeSheet(); rpc('like_partner', { p_chat: past.id, p_like: false }).catch(() => {}); }]]);
+}
+async function homePoll() {
+  if (!ST || !ST.profile || !$('s-search').classList.contains('on') || document.hidden) return;
+  const hadFriend = ST.friend && ST.friend.nick;
+  try { await refresh(); } catch { return; }
+  if (ST.chat) { ding('match'); bumpUnread(); return enterChat(ST.chat.id); }
+  renderSearch();
+  if (!hadFriend && ST.friend && likedNicks.has(ST.friend.nick)) { likedNicks.delete(ST.friend.nick); ding('match'); bumpUnread(); info('Karşılıklı!', `${ST.friend.nick} de seninle tekrar konuşmak istedi. Artık arkadaşsınız.`); }
+}
 async function chatEnded() {
   if (!CH || CH.ended) return; CH.ended = true;
-  const nick = ST?.chat?.partner?.nick; leaveChatLocal(); await refresh().catch(() => {}); renderSearch(); show('s-search');
-  info('Sohbet sona erdi', nick ? `${nick} sohbetten ayrıldı.` : 'Karşı taraf sohbetten ayrıldı.');
+  const past = CH.meta || null;
+  leaveChatLocal(); await refresh().catch(() => {}); renderSearch(); show('s-search');
+  if (past && !past.friendChat && !past.isFriend && !ST.friend && !ST.profile.friend_cooldown_until) return askLike(past, `${past.nick} sohbetten ayrıldı`);
+  info('Sohbet sona erdi', past ? `${past.nick} sohbetten ayrıldı.` : 'Karşı taraf sohbetten ayrıldı.');
 }
 
 // ---------- Sesli mesaj ----------
