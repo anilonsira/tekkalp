@@ -1,0 +1,15 @@
+{
+  "name": "Tek Kalbim",
+  "short_name": "Tek Kalbim",
+  "description": "Anonim, yavaş tanışma. Önce sohbet, kalbinin tek bir anahtarı olsun.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efeae0",
+  "theme_color": "#0d3b47",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
