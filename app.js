@@ -178,6 +178,7 @@ function renderSearch() {
   $('searchGo').disabled = !want.r.size;
   $('daily').textContent = `Bugün kalan eşleşme hakkın: ${p.matches_left} / ${DAILY}`;
   $('myTags').textContent = tagLine(p.interests) || 'Henüz seçmedin. Ortak ilgi alanı olanlarla öncelikli eşleşirsin.';
+  renderPushBox();
   renderFriend();
 }
 $('editTags').onclick = () => {
@@ -377,9 +378,18 @@ function startAnswer(q) {
   answeringQ = q; $('answering').hidden = false; $('answeringTxt').textContent = 'Cevaplıyorsun: ' + QS[q]; $('msgIn').focus();
 }
 $('answerCancel').onclick = () => { answeringQ = null; $('answering').hidden = true; };
+// Mesaj gönderince klavye açık kalsın: gönder düğmesi yazı kutusundan odağı çalmasın
+['mousedown', 'pointerdown'].forEach(ev => $('sendBtn').addEventListener(ev, e => { if (document.activeElement === $('msgIn')) e.preventDefault(); }));
+const coarse = window.matchMedia('(pointer: coarse)').matches;
+let kbTimer = null;
+$('msgIn').addEventListener('focus', () => { clearTimeout(kbTimer); if (coarse) $('kbDown').hidden = false; });
+$('msgIn').addEventListener('blur', () => { kbTimer = setTimeout(() => { $('kbDown').hidden = true; }, 150); });
+$('kbDown').addEventListener('pointerdown', e => { e.preventDefault(); $('msgIn').blur(); $('kbDown').hidden = true; });
 $('sendForm').onsubmit = async e => {
   e.preventDefault();
+  const keepKb = document.activeElement === $('msgIn');
   const v = $('msgIn').value.trim(); if (!v || !CH) return;
+  if (keepKb) $('msgIn').focus();
   $('sendBtn').disabled = true;
   try {
     const r = await rpc('send_message', { p_chat: CH.id, p_body: v, p_answer_to: answeringQ });
@@ -389,6 +399,7 @@ $('sendForm').onsubmit = async e => {
     await refresh(); if (ST.chat) renderChat();
   } catch (err) { info('Gönderilemedi', errMsg(err)); }
   $('sendBtn').disabled = false;
+  if (keepKb && !$('veil').classList.contains('on')) $('msgIn').focus();
 };
 
 // Açılış soruları
@@ -524,6 +535,48 @@ const DOCS = {
   cookie: `<h3>Oturum bilgisi</h3><p>Hesap açmadan kullandığın için, rumuzunu, arkadaşını ve engellediğin kişileri hatırlayabilmemiz adına tarayıcında zorunlu bir oturum bilgisi tutulur. Reklam veya takip amaçlı çerez kullanılmaz.</p><p class="muted small">Tarayıcı verilerini silersen ya da başka bir cihazdan girersen rumuzun ve arkadaşın kaybolur.</p>`
 };
 document.addEventListener('click', e => { const b = e.target.closest('[data-doc]'); if (!b) return; e.preventDefault(); sheet(DOCS[b.dataset.doc], [['Kapat', closeSheet, 'btn']]); });
+
+// ---------- Telefon bildirimleri ----------
+const PUSH_FN = CFG.SUPABASE_URL ? CFG.SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/push' : '';
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+let swReg = null;
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(r => { swReg = r; renderPushBox(); }).catch(() => {});
+const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+async function currentSub() { try { return swReg ? await swReg.pushManager.getSubscription() : null; } catch { return null; } }
+async function saveSub(sub) { const j = sub.toJSON(); await rpc('save_push', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth }); }
+async function renderPushBox() {
+  const box = $('pushBox'); if (!box) return;
+  if (!pushSupported) {
+    box.hidden = !isIOS;
+    box.innerHTML = isIOS ? '<b>Bildirim almak için</b><span class="small muted">iPhone\'da Safari\'nin alt kısmındaki Paylaş düğmesine dokun, "Ana Ekrana Ekle"yi seç. Sonra Tek Kalbim\'i ana ekrandaki simgesinden aç ve buradan bildirimleri aç.</span>' : '';
+    return;
+  }
+  box.hidden = false;
+  if (Notification.permission === 'denied') { box.innerHTML = '<b>Bildirimler engelli</b><span class="small muted">Tarayıcı ayarlarından bu siteye bildirim izni verirsen yeni mesajlardan haberin olur.</span>'; return; }
+  const sub = Notification.permission === 'granted' ? await currentSub() : null;
+  if (sub) {
+    box.innerHTML = '<b>Bildirimler açık</b><span class="small muted">Site kapalıyken yeni mesaj ve arkadaşlık isteklerinden haberin olacak.</span><button class="link" id="pushOff" type="button">Kapat</button>';
+    $('pushOff').onclick = async () => { try { await rpc('delete_push', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); } catch {} renderPushBox(); };
+    if (ME && !window.__subSaved) { window.__subSaved = true; saveSub(sub).catch(() => {}); }
+  } else {
+    box.innerHTML = '<b>Bildirimleri aç</b><span class="small muted">Site kapalıyken yeni mesaj ve arkadaşlık isteklerinden haberin olsun. Mesajın içeriği bildirimde görünmez.</span><button class="btn" id="pushOn" type="button">Bildirimleri aç</button>';
+    $('pushOn').onclick = enablePush;
+  }
+}
+async function enablePush() {
+  try {
+    if (!swReg) swReg = await navigator.serviceWorker.register('sw.js');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return renderPushBox();
+    const { publicKey } = await (await fetch(PUSH_FN)).json();
+    const sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(publicKey) });
+    await saveSub(sub); window.__subSaved = true;
+    info('Bildirimler açıldı', 'Site kapalıyken yeni mesajlardan haberin olacak.');
+  } catch (e) { info('Bildirimler açılamadı', 'Bir sorun oluştu, biraz sonra tekrar dene.'); }
+  renderPushBox();
+}
 
 // ---------- Başlat ----------
 if (!configured) show('s-setup'); else route().catch(e => info('Bağlantı sorunu', errMsg(e)));
