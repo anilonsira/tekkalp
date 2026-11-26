@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Tek Kalbim — Yönetim</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="nunito-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="baloo2-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="baloo2-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<script>try{var t=localStorage.getItem('tk_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="style.css?v=14">
+<style>
+/* Yönetim paneli: sitenin renkleri, daha geniş ve sade bir çalışma ekranı */
+.adm{max-width:980px;margin:0 auto;padding:0 16px 48px}
+.adm .screen{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.stat{background:var(--soft);border-radius:16px;padding:14px}
+.stat b{display:block;font:600 28px 'Baloo 2',sans-serif}
+.stat span{font-size:14px;color:var(--muted)}
+.stat.alert b{color:var(--danger)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.tabs button{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:700;padding:8px 14px;min-height:40px}
+.tabs button[aria-pressed=true]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.rep{border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;background:var(--panel)}
+.rep h3{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tag{font-size:13px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--ink)}
+.tag.red{background:light-dark(#fde3df,#4a1f1a);color:var(--danger)}
+.meta{font-size:14px;color:var(--muted);margin:6px 0}
+.acts2{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.acts2 button{min-height:40px;padding:8px 12px;font-size:14px;width:auto}
+.convo{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
+.convo .m{max-width:90%}
+.log{font-size:13px;width:100%;border-collapse:collapse;margin-top:8px}
+.log td,.log th{text-align:start;padding:4px 6px;border-bottom:1px solid var(--line)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top" style="max-width:980px"><div class="brand"><span id="logo"></span>Tek Kalbim · Yönetim</div><button class="link" id="logout" hidden>Çıkış</button></header>
+<main class="adm">
+  <section class="screen" id="a-login">
+    <h2>Yönetici girişi</h2>
+    <p class="muted">E-posta adresine tek kullanımlık bir giriş bağlantısı gönderilir. Şifre yok.</p>
+    <form class="stack" id="loginForm">
+      <label class="f">E-posta<input type="text" inputmode="email" autocomplete="email" id="email" placeholder="ornek@gmail.com"></label>
+      <button class="btn" type="submit" id="sendLink">Giriş bağlantısı gönder</button>
+      <p class="small muted" id="loginMsg"></p>
+    </form>
+  </section>
+  <section class="screen" id="a-denied" hidden>
+    <h2>Bu hesap yönetici değil</h2>
+    <p class="muted" id="deniedTxt"></p>
+  </section>
+  <section id="a-panel" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs">
+      <button data-s="open" aria-pressed="true">Açık şikayetler</button>
+      <button data-s="reviewed" aria-pressed="false">İncelenenler</button>
+      <button data-s="all" aria-pressed="false">Tümü</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</main>
+<div class="veil" id="veil"><div class="sheet" role="dialog" aria-modal="true" id="sheet"></div></div>
+<script src="config.js?v=14"></script>
+<script src="supabase.js?v=14"></script>
+<script type="module" src="admin.js?v=14"></script>
+</body>
+</html>
