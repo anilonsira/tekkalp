@@ -50,16 +50,19 @@ function show(id) { document.querySelectorAll('.screen').forEach(s => s.classLis
 function fitScreen() {
   const vv = window.visualViewport, h = vv ? vv.height : window.innerHeight;
   document.documentElement.style.setProperty('--vvh', h + 'px');
+  document.documentElement.style.setProperty('--vvt', (vv ? vv.offsetTop : 0) + 'px');
   const top = document.querySelector('.top'); if (top) document.documentElement.style.setProperty('--top-h', top.offsetHeight + 'px');
   if (document.body.classList.contains('in-chat')) { window.scrollTo(0, 0); const m = document.getElementById('msgs'); if (m) m.scrollTop = 1e9; }
 }
-if (window.visualViewport) { visualViewport.addEventListener('resize', fitScreen); visualViewport.addEventListener('scroll', () => { if (document.body.classList.contains('in-chat')) window.scrollTo(0, 0); }); }
+if (window.visualViewport) { visualViewport.addEventListener('resize', fitScreen); visualViewport.addEventListener('scroll', () => { if (document.body.classList.contains('in-chat')) window.scrollTo(0, 0); document.documentElement.style.setProperty('--vvt', visualViewport.offsetTop + 'px'); }); }
 window.addEventListener('resize', fitScreen); window.addEventListener('orientationchange', fitScreen);
 const errMsg = e => { const m = (e && (e.message || e.error_description)) || ''; const code = Object.keys(ERR).find(k => m.includes(k)); return code ? ERR[code] : 'Bir sorun oluştu, tekrar dene.'; };
 const errCode = e => Object.keys(ERR).find(k => ((e && e.message) || '').includes(k));
 
 // ---------- Alt pencere ----------
 function sheet(html, acts, after) {
+  // Klavye açıksa önce kapat: pencere klavyenin arkasında kalmasın
+  const ae = document.activeElement; if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) ae.blur();
   $('sheet').innerHTML = html + `<div class="acts">${acts.map((a, i) => `<button class="${a[2] || 'ghost'}" data-a="${i}">${esc(a[0])}</button>`).join('')}</div>`;
   $('sheet').querySelectorAll('[data-a]').forEach(b => b.onclick = () => acts[+b.dataset.a][1]());
   $('veil').classList.add('on'); after && after();
