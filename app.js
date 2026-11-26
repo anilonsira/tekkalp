@@ -288,7 +288,8 @@ function renderChat() {
     $('pTags').textContent = c.common && c.common.length ? 'Ortak ilgi alanlarınız: ' + tagLine(c.common) : (p.interests && p.interests.length ? 'İlgi alanları: ' + tagLine(p.interests) : '');
     if (!$('qlist').children.length) {
       qPicked = [];
-      $('qlist').innerHTML = QS.map((q, i) => `<button class="q" aria-pressed="false" data-i="${i}">${esc(q)}${i >= ROMANTIC_FROM ? ' <span class="rtag">Romantik</span>' : ''}</button>`).join('');
+      qTab = 0;
+      $('qlist').innerHTML = QS.map((q, i) => `<button class="q" aria-pressed="false" data-i="${i}">${esc(q)}</button>`).join('');
       updQ();
     }
     if (!$('s-qs').classList.contains('on')) show('s-qs');
@@ -393,8 +394,15 @@ $('sendForm').onsubmit = async e => {
 // Açılış soruları
 function updQ() {
   $('qCount').textContent = `${qPicked.length} / 3 seçildi`; $('qGo').disabled = !qPicked.length;
-  document.querySelectorAll('#qlist .q').forEach(b => { const on = qPicked.includes(+b.dataset.i); b.setAttribute('aria-pressed', on); b.disabled = !on && qPicked.length >= 3; });
+  $('qGo').textContent = qPicked.length ? `Soruları gönder (${qPicked.length})` : 'Soruları gönder';
+  document.querySelectorAll('#qlist .q').forEach(b => { const i = +b.dataset.i, on = qPicked.includes(i); b.setAttribute('aria-pressed', on); b.disabled = !on && qPicked.length >= 3; b.hidden = !Q_CATS[qTab][1].includes(i); });
+  $('qTabs').innerHTML = Q_CATS.map((c, k) => { const n = qPicked.filter(i => c[1].includes(i)).length; return `<button type="button" role="tab" aria-selected="${k === qTab}" data-k="${k}">${c[0]}${n ? ` <b>${n}</b>` : ''}</button>`; }).join('');
 }
+// Soru kategorileri: liste kısa kalsın diye sekmelere ayrıldı
+const Q_CATS = [['Gündelik', [0, 1, 2, 3, 5, 8, 9, 12]], ['Eğlenceli', [4, 6, 7, 10, 11, 13, 14, 15]], ['Romantik', [16, 17, 18, 19, 20, 21]]];
+let qTab = 0;
+$('qTabs').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (!b) return; qTab = +b.dataset.k; updQ(); });
+$('qRandom').onclick = () => { const all = QS.map((_, i) => i); qPicked = []; while (qPicked.length < 3) { const i = all.splice(Math.floor(Math.random() * all.length), 1)[0]; qPicked.push(i); } updQ(); };
 $('qlist').addEventListener('click', e => { const b = e.target.closest('.q'); if (!b) return; const i = +b.dataset.i; qPicked = qPicked.includes(i) ? qPicked.filter(x => x !== i) : [...qPicked, i]; updQ(); });
 $('qGo').onclick = async () => { $('qGo').disabled = true; try { await rpc('submit_questions', { p_chat: CH.id, p_qs: qPicked }); await fetchMsgs(); await refresh(); renderChat(); } catch (e) { info('Olmadı', errMsg(e)); updQ(); } };
 
