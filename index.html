@@ -15,11 +15,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('tk_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
 </head>
 <body>
-<header class="top"><div class="brand" id="brand" role="link" tabindex="0" aria-label="Ana sayfa" title="Ana sayfa"></div><span class="pill" id="topPill">18+</span></header>
+<header class="top"><div class="brand" id="brand" role="link" tabindex="0" aria-label="Ana sayfa" title="Ana sayfa"></div><div class="topr"><button class="themebtn" id="themeBtn" type="button" aria-label="Gece ya da gündüz görünümü"></button><span class="pill" id="topPill">18+</span></div></header>
 <main class="app">
 
 <section class="screen on" id="s-loading"><p class="muted">Yükleniyor…</p></section>
@@ -108,7 +109,7 @@
   <div id="banner"></div>
   <div class="rule">Telefon, adres, sosyal medya hesabı ve bağlantı paylaşılamaz; otomatik gizlenir.</div>
   <div class="msgs" id="msgs" aria-live="polite"></div>
-  <div class="typing" id="typing" hidden></div>
+  <div class="typing" id="typing" hidden aria-label="yazıyor"><span></span><span></span><span></span></div>
   <div class="kbrow"><button type="button" class="kbdown" id="kbDown" hidden aria-label="Klavyeyi kapat" title="Klavyeyi kapat"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="11" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 7.5h.01M10 7.5h.01M14 7.5h.01M17.5 7.5h.01M6.5 11h.01M17.5 11h.01M9.5 11h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8.5 18l3.5 3 3.5-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   <div class="answering" id="answering" hidden><span id="answeringTxt"></span><button class="ghost" id="answerCancel">Vazgeç</button></div>
   <form class="send" id="sendForm"><button type="button" class="ico locked" id="voiceBtn" aria-label="Sesli mesaj" title="Sesli mesaj"><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="21"/><circle class="prg" id="voiceRing" cx="24" cy="24" r="21" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 24 24)"/><g class="mic" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="19.5" y="12" width="9" height="15" rx="4.5" fill="currentColor" stroke="none"/><path d="M15.5 23.5a8.5 8.5 0 0 0 17 0M24 32v4.5M19.5 36.5h9"/></g></svg></button><input type="text" id="msgIn" placeholder="Mesaj yaz…" autocomplete="off" maxlength="500"><button class="ico" type="submit" id="sendBtn" aria-label="Gönder" title="Gönder"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 24h18M25 16l8 8-8 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
