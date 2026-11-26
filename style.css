@@ -100,7 +100,15 @@ input[type=date]{font:inherit;font-size:16px;padding:12px 14px;border-radius:14p
 .msgs{margin-top:6px}
 .brand{cursor:pointer;border-radius:10px}.brand:focus-visible{outline:3px solid var(--teal);outline-offset:4px}
 .m .t{display:block;font-size:11px;opacity:.6;text-align:end;margin-top:2px;font-weight:400}
-.typing{font-size:13px;color:var(--muted);padding:2px 6px;font-style:italic}
+.typing{align-self:flex-start;display:inline-flex;gap:4px;padding:12px 14px;border-radius:18px 18px 18px 6px;background:var(--soft);width:max-content;margin:4px 0}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tdot 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tdot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.typing span{animation:none}}
+#cMeta.typing-now{color:var(--teal);font-weight:700}
+.topr{display:flex;gap:8px;align-items:center}
+.themebtn{width:40px;height:40px;min-height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;padding:0}
+.themeopt{display:flex;gap:12px;align-items:center}.themeopt svg{flex:none}
 .chip:disabled{opacity:.4;cursor:not-allowed}
 .tagline{display:block;color:var(--teal);font-weight:700}
 #cMeta.online::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#22a06b;margin-inline-end:6px;vertical-align:middle}
